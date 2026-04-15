@@ -55,5 +55,6 @@ export const DEPARTMENT_COLORS: Record<string, string> = {
   'General Administration': '#64748b',
 };
 
+export const AI_INSIGHTS: any[] = [];
 
 export const DELHI_CENTER = { lat: 28.6139, lng: 77.209 } as const;

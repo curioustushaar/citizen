@@ -1,20 +1,21 @@
-'use client';
-
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CATEGORY_ICONS, PRIORITY_COLORS } from '@/lib/constants';
 import { MapPin, Clock } from 'lucide-react';
 
 interface Complaint {
-  complaintId: string;
+  _id: string;
+  complaintId?: string;
   description: string;
   category: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   status: string;
-  location: { area: string; district: string };
+  location: any;
   createdAt: string;
 }
 
 function timeAgo(dateStr: string) {
+  if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Just now';
@@ -25,6 +26,12 @@ function timeAgo(dateStr: string) {
 }
 
 export default function ComplaintFeed({ complaints }: { complaints: Complaint[] }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="glass-card h-full flex flex-col">
       <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
@@ -49,7 +56,7 @@ export default function ComplaintFeed({ complaints }: { complaints: Complaint[] 
         <AnimatePresence initial={false}>
           {(complaints || []).slice(0, 15).map((c, i) => (
             <motion.div
-              key={c.complaintId}
+              key={c._id || c.complaintId || i}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
@@ -92,10 +99,11 @@ export default function ComplaintFeed({ complaints }: { complaints: Complaint[] 
                   </p>
                   <div className="flex items-center gap-3 text-[10px] text-white/25">
                     <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {c.location.area}
+                      <MapPin className="w-3 h-3" /> 
+                      {typeof c.location === 'object' ? (c.location.area || 'Unknown') : (c.location || 'Unknown')}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {timeAgo(c.createdAt)}
+                      <Clock className="w-3 h-3" /> {mounted ? timeAgo(c.createdAt) : '...'}
                     </span>
                   </div>
                 </div>

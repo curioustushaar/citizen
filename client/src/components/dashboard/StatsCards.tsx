@@ -44,8 +44,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       iconBg: 'rgba(6, 182, 212, 0.1)',
       iconColor: '#22d3ee',
       barColor: 'rgba(6, 182, 212, 0.3)',
-      change: '+12%',
-      trend: 'up',
     },
     {
       label: 'Pending',
@@ -56,8 +54,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       iconBg: 'rgba(245, 158, 11, 0.1)',
       iconColor: '#fbbf24',
       barColor: 'rgba(245, 158, 11, 0.3)',
-      change: '+5%',
-      trend: 'up',
     },
     {
       label: 'Resolved',
@@ -68,8 +64,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       iconBg: 'rgba(16, 185, 129, 0.1)',
       iconColor: '#34d399',
       barColor: 'rgba(16, 185, 129, 0.3)',
-      change: '+18%',
-      trend: 'up',
     },
     {
       label: 'Escalated',
@@ -80,8 +74,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       iconBg: 'rgba(244, 63, 94, 0.1)',
       iconColor: '#fb7185',
       barColor: 'rgba(244, 63, 94, 0.3)',
-      change: '-3%',
-      trend: 'down',
     },
   ];
 
@@ -95,10 +87,7 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.5 }}
-            className="stat-card cursor-default group border border-white/[0.06]"
-            style={{
-              '--accent-color': stat.glowColor,
-            } as React.CSSProperties}
+            className="stat-card cursor-default group relative overflow-hidden border border-white/[0.06]"
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = `${stat.iconColor}25`;
               e.currentTarget.style.boxShadow = `0 8px 32px rgba(0,0,0,0.3), 0 0 20px ${stat.glowColor}`;
@@ -115,17 +104,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
               >
                 <Icon className="w-5 h-5" style={{ color: stat.iconColor }} />
               </div>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  stat.trend === 'up'
-                    ? stat.label === 'Escalated'
-                      ? 'text-success-400 bg-success-500/10'
-                      : 'text-success-400 bg-success-500/10'
-                    : 'text-danger-400 bg-danger-500/10'
-                }`}
-              >
-                {stat.change}
-              </span>
             </div>
             <h3 className="text-3xl font-bold text-white mb-1">
               <AnimatedCounter value={stat.value} />

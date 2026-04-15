@@ -9,7 +9,7 @@ import {
   getDepartment,
   calculateSLA,
   generateComplaintId,
-} from '../services/aiService';
+} from '../services/aiEngine';
 import { AuthRequest } from '../middleware/auth';
 
 // GET /api/complaints
@@ -54,7 +54,7 @@ export const createComplaint = async (req: Request, res: Response) => {
     const { category, confidence: aiConfidence } = detectCategory(description);
     const priority = detectPriority(description);
     const department = getDepartment(category);
-    const slaDeadline = calculateSLA(priority);
+    const slaDeadline = calculateSLA(category, priority);
     const complaintId = generateComplaintId();
     const confidence = aiConfidence;
 

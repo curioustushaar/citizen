@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth';
 
 export default function SuperAdminLoginPage() {
   const router = useRouter();
-  const { login, demoLogin } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,11 +19,11 @@ export default function SuperAdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const ok = await login(email, password, 'SUPER_ADMIN');
-    if (ok) {
-      router.push('/superadmin');
+    const result = await login(email, password);
+    if (result.ok) {
+      router.push('/superadmin/dashboard');
     } else {
-      setError('Invalid credentials or unauthorized role. Access denied.');
+      setError(result.error || 'Invalid credentials or unauthorized role. Access denied.');
     }
     setLoading(false);
   };
@@ -31,21 +31,18 @@ export default function SuperAdminLoginPage() {
   const handleDemoLogin = async () => {
     setLoading(true);
     setError('');
-    const ok = await demoLogin('SUPER_ADMIN');
-    if (ok) {
-      router.push('/superadmin');
+    const result = await login('superadmin@delhi.gov.in', 'super123');
+    if (result.ok) {
+      router.push('/superadmin/dashboard');
     } else {
-      setError('Demo login failed');
+      setError(result.error || 'Demo login failed');
     }
     setLoading(false);
   };
 
   return (
     <div className="sa-login-wrapper">
-      {/* Scan lines effect */}
       <div className="sa-scanlines" />
-
-      {/* Grid background */}
       <div className="sa-grid-bg" />
 
       <motion.div
@@ -54,7 +51,6 @@ export default function SuperAdminLoginPage() {
         transition={{ duration: 0.6 }}
         className="sa-login-container"
       >
-        {/* Security emblem */}
         <div className="sa-emblem-section">
           <motion.div
             initial={{ rotate: -180, scale: 0 }}
@@ -80,7 +76,6 @@ export default function SuperAdminLoginPage() {
           </motion.div>
         </div>
 
-        {/* Login Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -152,7 +147,6 @@ export default function SuperAdminLoginPage() {
             </button>
           </form>
 
-          {/* Demo access */}
           <div className="login-demo-section">
             <div className="login-divider sa-divider">
               <span>or use demo credentials</span>
