@@ -21,7 +21,11 @@ const markerColors: Record<string, string> = {
 };
 
 export default function CityMap({ complaints }: { complaints: Complaint[] }) {
-  const markers = useMemo(() => complaints || [], [complaints]);
+  const markers = useMemo(() => {
+    return (complaints || []).filter(
+      (c) => c && c.location && typeof c.location.lat === 'number' && typeof c.location.lng === 'number'
+    );
+  }, [complaints]);
 
   return (
     <div className="glass-card overflow-hidden h-full min-h-[400px]">

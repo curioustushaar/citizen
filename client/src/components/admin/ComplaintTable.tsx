@@ -110,7 +110,7 @@ export default function ComplaintTable({ complaints }: { complaints: Complaint[]
               const status = STATUS_COLORS[c.status] || STATUS_COLORS.PENDING;
               return (
                 <motion.tr
-                  key={c.complaintId}
+                  key={c.complaintId || (c as any)._id || i}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
@@ -118,7 +118,7 @@ export default function ComplaintTable({ complaints }: { complaints: Complaint[]
                 >
                   <td className="px-4 py-3">
                     <span className="text-xs font-mono text-primary-400">
-                      {c.complaintId.slice(0, 12)}
+                      {(c.complaintId || (c as any)._id || 'N/A').toString().slice(0, 12)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
