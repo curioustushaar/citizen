@@ -13,11 +13,12 @@ import {
   Zap,
   FileText,
   Users,
-  Settings,
   LogIn,
   LogOut,
   User,
   Building2,
+  Navigation,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -29,53 +30,47 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, t } = useAuth();
 
-  // Show minimal sidebar on login page
+  // Hide sidebar on login page
   if (pathname === '/login') return null;
 
   // Navigation items based on role
   const getNavItems = () => {
-    const common = [
-      { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
-    ];
-
+    // Unauthenticated user — public access only
     if (!user) {
       return [
-        ...common,
-        { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
-        { label: 'Analytics', icon: BarChart3, href: '/analytics' },
-        { label: 'Login', icon: LogIn, href: '/login' },
+        { label: t('submitComplaint'), icon: PlusCircle, href: '/user/complaints/new' },
+        { label: t('nearbyIssues'), icon: Navigation, href: '/user/nearby' },
       ];
     }
 
+    // PUBLIC (Citizen)
     if (user.role === 'PUBLIC') {
       return [
-        ...common,
-        { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
-        { label: 'My Complaints', icon: FileText, href: '/my-complaints' },
-        { label: 'Analytics', icon: BarChart3, href: '/analytics' },
+        { label: t('dashboard'), icon: Activity, href: '/user/dashboard' },
+        { label: t('submitComplaint'), icon: PlusCircle, href: '/user/complaints/new' },
+        { label: t('myComplaints'), icon: FileText, href: '/user/complaints' },
+        { label: t('nearbyIssues'), icon: Navigation, href: '/user/nearby' },
       ];
     }
 
+    // ADMIN (Officer)
     if (user.role === 'ADMIN') {
       return [
-        ...common,
-        { label: 'Officer Panel', icon: Building2, href: '/officer' },
-        { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
-        { label: 'Analytics', icon: BarChart3, href: '/analytics' },
-        { label: 'Admin Panel', icon: Shield, href: '/admin' },
+        { label: 'Officer Panel', icon: Building2, href: '/officer/dashboard' },
+        { label: t('submitComplaint'), icon: PlusCircle, href: '/user/complaints/new' },
+        { label: t('nearbyIssues'), icon: Navigation, href: '/user/nearby' },
       ];
     }
 
     // SUPER_ADMIN
     return [
-      ...common,
-      { label: 'Control Room', icon: Shield, href: '/superadmin' },
-      { label: 'Officer Panel', icon: Building2, href: '/officer' },
-      { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
-      { label: 'Analytics', icon: BarChart3, href: '/analytics' },
-      { label: 'Admin Panel', icon: Users, href: '/admin' },
+      { label: 'Control Room', icon: Shield, href: '/superadmin/dashboard' },
+      { label: 'Officer Panel', icon: Building2, href: '/officer/dashboard' },
+      { label: t('submitComplaint'), icon: PlusCircle, href: '/user/complaints/new' },
+      { label: t('nearbyIssues'), icon: Navigation, href: '/user/nearby' },
+      { label: 'User Management', icon: Users, href: '/admin' },
     ];
   };
 
@@ -85,6 +80,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     PUBLIC: 'from-success-500 to-success-600',
     ADMIN: 'from-primary-500 to-primary-600',
     SUPER_ADMIN: 'from-accent-500 to-accent-600',
+  };
+
+  const roleLabels: Record<string, string> = {
+    PUBLIC: 'Citizen',
+    ADMIN: 'Officer',
+    SUPER_ADMIN: 'Super Admin',
   };
 
   return (
@@ -98,7 +99,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Logo */}
       <div className="h-16 flex items-center gap-3 px-4 border-b border-white/5">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500
-                        flex items-center justify-center flex-shrink-0">
+                        flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/20">
           <Zap className="w-5 h-5 text-white" />
         </div>
         <AnimatePresence>
@@ -110,7 +111,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               className="overflow-hidden whitespace-nowrap"
             >
               <p className="text-sm font-bold text-white">AI Grievance</p>
-              <p className="text-[9px] text-white/30">Smart City Resolver</p>
+              <p className="text-[9px] text-white/30 uppercase tracking-widest">Smart City Resolver</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -125,12 +126,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center flex-shrink-0`}>
+              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center flex-shrink-0 shadow-md`}>
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-                <p className="text-[10px] text-white/30">{user.role.replace('_', ' ')}</p>
+                <p className="text-xs font-bold text-white truncate">{user.name}</p>
+                <p className="text-[10px] text-white/30">{roleLabels[user.role] || user.role}</p>
               </div>
             </div>
           )}
@@ -188,6 +189,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {/* Collapse Toggle */}
         <button
           onClick={onToggle}
+          suppressHydrationWarning
           className="nav-link w-full justify-center"
         >
           {collapsed ? (

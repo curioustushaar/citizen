@@ -4,6 +4,44 @@ import User from '../models/User';
 import AuditLog from '../models/AuditLog';
 import { AuthRequest } from '../middleware/auth';
 
+// GET /api/users/me (Authenticated user)
+export const getMe = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.user!.userId).select('-password');
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    res.json({ success: true, data: user });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// PATCH /api/users/profile (Authenticated user updates own profile)
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const { 
+      name, phone, avatar, 
+      address, city, state, zipCode, 
+      gender, dob, bio 
+    } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user!.userId,
+      { 
+        name, phone, avatar, 
+        address, city, state, zipCode, 
+        gender, dob, bio 
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    res.json({ success: true, data: user });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // GET /api/users (SUPER_ADMIN only)
 export const getUsers = async (_req: AuthRequest, res: Response) => {
   try {

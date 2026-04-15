@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Language, TranslationKey, translations } from './translations';
 
 interface UserData {
   id: string;
@@ -9,17 +10,28 @@ interface UserData {
   role: 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN';
   department: string | null;
   region: string | null;
+  phone: string;
   avatar?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  gender?: string;
+  dob?: string;
+  bio?: string;
 }
 
 interface AuthContextType {
   user: UserData | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  demoLogin: (role: string) => Promise<boolean>;
-  register: (data: any) => Promise<boolean>;
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: TranslationKey) => string;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  register: (data: any) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isPublic: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -27,37 +39,73 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Demo users for frontend-only mode
-const demoUsers: Record<string, UserData> = {
-  PUBLIC: { id: 'demo-pub-1', name: 'Aarav Citizen', email: 'citizen@demo.com', role: 'PUBLIC', department: null, region: 'Delhi' },
-  ADMIN: { id: 'demo-adm-1', name: 'Rajesh Kumar', email: 'admin@trafficpolice.gov.in', role: 'ADMIN', department: 'Delhi Traffic Police', region: 'Delhi-Central' },
-  SUPER_ADMIN: { id: 'demo-sa-1', name: 'Commissioner Singh', email: 'superadmin@delhi.gov.in', role: 'SUPER_ADMIN', department: null, region: 'Delhi-NCR' },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [language, setLanguageState] = useState<Language>('en');
 
-  // Restore session on mount
+  // Restore session & language on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('grievance_token');
-    const savedUser = localStorage.getItem('grievance_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedToken = localStorage.getItem('grievance_token');
+      const savedUser = localStorage.getItem('grievance_user');
+      const savedLang = localStorage.getItem('grievance_lang');
+      
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      }
+      if (savedLang === 'en' || savedLang === 'hi') {
+        setLanguageState(savedLang as Language);
+      }
+    } catch {
+      // Corrupt storage — clear it
+      localStorage.removeItem('grievance_token');
+      localStorage.removeItem('grievance_user');
     }
     setIsLoading(false);
   }, []);
 
-  const saveSession = (tkn: string, usr: UserData) => {
-    setToken(tkn);
-    setUser(usr);
-    localStorage.setItem('grievance_token', tkn);
-    localStorage.setItem('grievance_user', JSON.stringify(usr));
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('grievance_lang', lang);
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const t = (key: TranslationKey): string => {
+    return translations[language][key] || translations['en'][key] || key;
+  };
+
+  const saveSession = (tkn: string, usr: any) => {
+    // Normalize user object structure (id vs _id)
+    const normalizedUser = {
+      ...usr,
+      id: usr.id || usr._id
+    };
+    setToken(tkn);
+    setUser(normalizedUser);
+    localStorage.setItem('grievance_token', tkn);
+    localStorage.setItem('grievance_user', JSON.stringify(normalizedUser));
+  };
+
+  const refreshUser = async () => {
+    const activeToken = token || localStorage.getItem('grievance_token');
+    if (!activeToken) return;
+
+    try {
+      const res = await fetch('/api/users/me', {
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        saveSession(activeToken, data.data);
+      }
+    } catch (err) {
+      console.error('Failed to refresh user data', err);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -67,43 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.success) {
         saveSession(data.data.token, data.data.user);
-        return true;
+        return { ok: true };
       }
-    } catch {
-      // Backend unavailable — try demo match
-      const found = Object.values(demoUsers).find((u) => u.email === email);
-      if (found) {
-        saveSession('demo-token-' + found.role, found);
-        return true;
-      }
+      return { ok: false, error: data.error || 'Login failed' };
+    } catch (err) {
+      return { ok: false, error: 'Cannot connect to server. Is the backend running?' };
     }
-    return false;
   };
 
-  const demoLogin = async (role: string): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/auth/demo-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        saveSession(data.data.token, data.data.user);
-        return true;
-      }
-    } catch {
-      // Frontend-only fallback
-      const usr = demoUsers[role];
-      if (usr) {
-        saveSession('demo-token-' + role, usr);
-        return true;
-      }
-    }
-    return false;
-  };
-
-  const register = async (formData: any): Promise<boolean> => {
+  const register = async (formData: any) => {
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -113,22 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.success) {
         saveSession(data.data.token, data.data.user);
-        return true;
+        return { ok: true };
       }
-    } catch {
-      // Frontend-only
-      const usr: UserData = {
-        id: 'demo-' + Date.now(),
-        name: formData.name,
-        email: formData.email,
-        role: 'PUBLIC',
-        department: null,
-        region: 'Delhi',
-      };
-      saveSession('demo-token-PUBLIC', usr);
-      return true;
+      return { ok: false, error: data.error || 'Registration failed' };
+    } catch (err) {
+      return { ok: false, error: 'Cannot connect to server. Is the backend running?' };
     }
-    return false;
   };
 
   const logout = () => {
@@ -144,10 +154,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         isLoading,
+        language,
+        setLanguage,
+        t,
         login,
-        demoLogin,
         register,
         logout,
+        refreshUser,
         isPublic: user?.role === 'PUBLIC',
         isAdmin: user?.role === 'ADMIN',
         isSuperAdmin: user?.role === 'SUPER_ADMIN',

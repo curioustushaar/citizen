@@ -12,6 +12,13 @@ export interface IUser extends Document {
   phone: string;
   avatar: string;
   isActive: boolean;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  gender: string;
+  dob: string;
+  bio: string;
   createdAt: Date;
 }
 
@@ -26,6 +33,13 @@ const UserSchema = new Schema<IUser>(
     phone: { type: String, default: '' },
     avatar: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
+    address: { type: String, default: '' },
+    city: { type: String, default: '' },
+    state: { type: String, default: '' },
+    zipCode: { type: String, default: '' },
+    gender: { type: String, default: '' },
+    dob: { type: String, default: '' },
+    bio: { type: String, default: '' },
   },
   { timestamps: true }
 );

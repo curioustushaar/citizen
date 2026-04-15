@@ -44,8 +44,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       bgColor: 'bg-primary-500/10',
       borderColor: 'border-primary-500/20',
       shadowColor: 'shadow-primary-500/5',
-      change: '+12%',
-      trend: 'up',
     },
     {
       label: 'Pending',
@@ -56,8 +54,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       bgColor: 'bg-warning-500/10',
       borderColor: 'border-warning-500/20',
       shadowColor: 'shadow-warning-500/5',
-      change: '+5%',
-      trend: 'up',
     },
     {
       label: 'Resolved',
@@ -68,8 +64,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       bgColor: 'bg-success-500/10',
       borderColor: 'border-success-500/20',
       shadowColor: 'shadow-success-500/5',
-      change: '+18%',
-      trend: 'up',
     },
     {
       label: 'Escalated',
@@ -80,8 +74,6 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       bgColor: 'bg-danger-500/10',
       borderColor: 'border-danger-500/20',
       shadowColor: 'shadow-danger-500/5',
-      change: '-3%',
-      trend: 'down',
     },
   ];
 
@@ -95,43 +87,18 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.5 }}
-            className={`stat-card ${stat.borderColor} border ${stat.shadowColor} hover:shadow-lg hover:border-opacity-40 cursor-default`}
+            className={`stat-card ${stat.borderColor} border ${stat.shadowColor} hover:shadow-lg hover:border-opacity-40 cursor-default p-5 rounded-2xl bg-white/5`}
             style={{ '--accent-color': stat.color } as React.CSSProperties}
           >
             <div className="flex items-start justify-between mb-4">
               <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
                 <Icon className={`w-5 h-5 ${stat.textColor}`} />
               </div>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  stat.trend === 'up'
-                    ? stat.label === 'Escalated'
-                      ? 'text-success-400 bg-success-500/10'
-                      : 'text-success-400 bg-success-500/10'
-                    : 'text-danger-400 bg-danger-500/10'
-                }`}
-              >
-                {stat.change}
-              </span>
             </div>
             <h3 className="text-3xl font-bold text-white mb-1">
               <AnimatedCounter value={stat.value} />
             </h3>
             <p className="text-sm text-white/50">{stat.label}</p>
-
-            {/* Sparkline decoration */}
-            <div className="mt-3 flex items-end gap-px h-8">
-              {[65, 45, 78, 52, 88, 35, 72, 58, 42, 90, 62, 48].map((h, i) => (
-                <div
-                  key={i}
-                  className={`flex-1 rounded-sm ${stat.bgColor} opacity-60`}
-                  style={{
-                    height: `${(h + index * 7) % 80 + 20}%`,
-                    transition: 'height 0.3s ease',
-                  }}
-                />
-              ))}
-            </div>
           </motion.div>
         );
       })}

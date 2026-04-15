@@ -1,82 +1,65 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export interface ITimelineStep {
+  step: string;
+  time: Date;
+}
+
 export interface IComplaint extends Document {
-  complaintId: string;
   description: string;
   category: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'ESCALATED';
+  status: string;
+  priority: string;
   department: string;
+  slaDeadline: Date;
+  tags: string[];
+  imageUrls: string[];
+  voiceNoteUrl: string;
+  userId: string;
+  userName: string;
+  assignedOfficer: string;
+  timeline: ITimelineStep[];
   location: {
-    lat: number;
-    lng: number;
+    type: string;
+    coordinates: [number, number]; // [lng, lat]
     area: string;
     district: string;
   };
-  assignedOfficer: string | null;
-  assignedOfficerName: string | null;
-  confidence: number;
-  slaDeadline: Date;
-  userId: string | null;
-  userName: string;
-  notes: Array<{
-    text: string;
-    attachment: string | null;
-    addedBy: string;
-    addedAt: Date;
-  }>;
-  feedback: {
-    satisfied: boolean;
-    comment: string;
-    submittedAt: Date;
-  } | null;
   createdAt: Date;
-  resolvedAt: Date | null;
+  updatedAt: Date;
 }
 
 const ComplaintSchema = new Schema<IComplaint>(
   {
-    complaintId: { type: String, required: true, unique: true },
     description: { type: String, required: true },
-    category: { type: String, required: true },
-    priority: { type: String, enum: ['HIGH', 'MEDIUM', 'LOW'], required: true },
-    status: {
-      type: String,
-      enum: ['PENDING', 'IN_PROGRESS', 'RESOLVED', 'ESCALATED'],
-      default: 'PENDING',
-    },
-    department: { type: String, required: true },
-    location: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
-      area: { type: String, required: true },
-      district: { type: String, default: '' },
-    },
-    assignedOfficer: { type: String, default: null },
-    assignedOfficerName: { type: String, default: null },
-    confidence: { type: Number, default: 0 },
-    slaDeadline: { type: Date, required: true },
-    userId: { type: String, default: null, index: true },
-    userName: { type: String, default: 'Anonymous' },
-    notes: [
+    category:    { type: String, required: true },
+    status:      { type: String, default: 'pending' },
+    priority:    { type: String, default: 'MEDIUM' },
+    department:  { type: String, default: 'General Administration' },
+    slaDeadline: { type: Date },
+    tags:        { type: [String], default: [] },
+    imageUrls:   { type: [String], default: [] },
+    voiceNoteUrl:{ type: String, default: '' },
+    userId:      { type: String, default: '' },
+    userName:    { type: String, default: 'Anonymous' },
+    assignedOfficer: { type: String, default: 'Unassigned' },
+    timeline: [
       {
-        text: { type: String },
-        attachment: { type: String, default: null },
-        addedBy: { type: String },
-        addedAt: { type: Date, default: Date.now },
-      },
+        step: { type: String, required: true },
+        time: { type: Date, default: Date.now }
+      }
     ],
-    feedback: {
-      type: {
-        satisfied: Boolean,
-        comment: String,
-        submittedAt: Date,
-      },
-      default: null,
+    location: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], required: true }, // [lng, lat]
+      area:     { type: String, required: true },
+      district: { type: String, default: 'Delhi' }
     },
-    resolvedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
+
+// Create geospatial index
+ComplaintSchema.index({ location: '2dsphere' });
 
 export default mongoose.model<IComplaint>('Complaint', ComplaintSchema);

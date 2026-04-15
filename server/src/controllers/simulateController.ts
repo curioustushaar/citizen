@@ -6,8 +6,8 @@ import {
   detectPriority,
   getDepartment,
   calculateSLA,
-  generateComplaintId,
-} from '../services/aiService';
+  generateTags,
+} from '../services/aiEngine';
 
 const crisisTemplates = [
   { desc: 'Major fire reported in Chandni Chowk market area, multiple shops affected', area: 'Chandni Chowk', district: 'Central Delhi', lat: 28.6507, lng: 77.2334 },
@@ -33,41 +33,45 @@ export const simulateCrisis = async (_req: Request, res: Response) => {
     const complaints = [];
 
     for (const template of selected) {
-      const { category, confidence } = detectCategory(template.desc);
+      const category = detectCategory(template.desc);
       const priority = detectPriority(template.desc);
       const department = getDepartment(category);
-      const slaDeadline = calculateSLA(priority);
-      const complaintId = generateComplaintId();
+      const slaDeadline = calculateSLA(category, priority);
+      const tags = generateTags(template.desc, category);
 
       const officer = await Officer.findOne({ department }).sort({ pendingCount: 1 });
-      let assignedOfficer = null;
-      let assignedOfficerName = null;
-
-      if (officer) {
-        assignedOfficer = officer._id.toString();
-        assignedOfficerName = officer.name;
-        officer.pendingCount += 1;
-        await officer.save();
-      }
+      
+      const createdAt = new Date();
+      const timeline = [
+        { step: 'Submitted', time: createdAt },
+        { step: 'Assigned', time: new Date(createdAt.getTime() + 1000 * 60 * 5) } // Assigned 5 mins later
+      ];
 
       const complaint = await Complaint.create({
-        complaintId,
         description: template.desc,
         category,
         priority,
-        status: 'PENDING',
+        status: 'pending',
+        department,
+        tags,
         location: {
-          lat: template.lat + (Math.random() - 0.5) * 0.01,
-          lng: template.lng + (Math.random() - 0.5) * 0.01,
+          type: 'Point',
+          coordinates: [template.lng + (Math.random() - 0.5) * 0.01, template.lat + (Math.random() - 0.5) * 0.01],
           area: template.area,
           district: template.district,
         },
-        assignedOfficer,
-        assignedOfficerName,
-        department,
+        assignedOfficer: officer?.name || 'Assigned Officer',
         slaDeadline,
-        confidence,
+        timeline,
+        imageUrls: [],
+        voiceNoteUrl: '',
+        createdAt,
       });
+
+      if (officer) {
+        officer.pendingCount += 1;
+        await officer.save();
+      }
 
       complaints.push(complaint);
     }

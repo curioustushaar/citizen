@@ -119,7 +119,7 @@ export default function SuperAdminPage() {
       {tab === 'users' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {(users.length > 0 ? users : dummyUsers).map((u: any, i: number) => (
+            {users.map((u: any, i: number) => (
               <motion.div key={u._id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="glass-card p-4">
                 <div className="flex items-center gap-3 mb-3">
@@ -146,6 +146,9 @@ export default function SuperAdminPage() {
                 </div>
               </motion.div>
             ))}
+            {users.length === 0 && (
+              <div className="col-span-full py-12 text-center text-white/20">No users found.</div>
+            )}
           </div>
         </div>
       )}
@@ -154,7 +157,7 @@ export default function SuperAdminPage() {
       {tab === 'sla' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(slaConfigs.length > 0 ? slaConfigs : dummySLA).map((sla: any, i: number) => (
+            {slaConfigs.map((sla: any, i: number) => (
               <motion.div key={sla._id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
                 className="glass-card p-5">
                 <div className="flex items-center justify-between mb-4">
@@ -183,6 +186,9 @@ export default function SuperAdminPage() {
                 <p className="text-[10px] text-white/20 mt-3">Escalation Levels: {sla.escalationLevels}</p>
               </motion.div>
             ))}
+            {slaConfigs.length === 0 && (
+              <div className="col-span-full py-12 text-center text-white/20">No SLA rules defined.</div>
+            )}
           </div>
         </div>
       )}
@@ -200,7 +206,7 @@ export default function SuperAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {(auditLogs.length > 0 ? auditLogs : dummyAudit).map((log: any, i: number) => (
+                {auditLogs.map((log: any, i: number) => (
                   <motion.tr key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                     className="border-b border-white/[0.03] hover:bg-white/[0.02]">
                     <td className="px-4 py-3 text-[11px] text-white/40 font-mono">
@@ -223,41 +229,12 @@ export default function SuperAdminPage() {
                 ))}
               </tbody>
             </table>
+            {auditLogs.length === 0 && (
+              <div className="py-12 text-center text-white/20">No logs available.</div>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-
-// Fallback dummy data for frontend-only mode
-const dummyUsers = [
-  { _id: '1', name: 'Aarav Citizen', email: 'citizen@demo.com', role: 'PUBLIC', department: null, isActive: true },
-  { _id: '2', name: 'Rohit Kumar', email: 'rohit@demo.com', role: 'PUBLIC', department: null, isActive: true },
-  { _id: '3', name: 'Rajesh Kumar', email: 'admin@trafficpolice.gov.in', role: 'ADMIN', department: 'Delhi Traffic Police', isActive: true },
-  { _id: '4', name: 'Priya Sharma', email: 'admin@jalboard.gov.in', role: 'ADMIN', department: 'Delhi Jal Board', isActive: true },
-  { _id: '5', name: 'Amit Singh', email: 'admin@bses.gov.in', role: 'ADMIN', department: 'BSES / TPDDL', isActive: true },
-  { _id: '6', name: 'Sunita Gupta', email: 'admin@mcd.gov.in', role: 'ADMIN', department: 'Municipal Corporation of Delhi', isActive: true },
-  { _id: '7', name: 'Commissioner Singh', email: 'superadmin@delhi.gov.in', role: 'SUPER_ADMIN', department: null, isActive: true },
-  { _id: '8', name: 'Secretary Verma', email: 'secretary@delhi.gov.in', role: 'SUPER_ADMIN', department: null, isActive: true },
-];
-
-const dummySLA = [
-  { _id: '1', category: 'Traffic & Transport', department: 'Delhi Traffic Police', priorityHigh: 2, priorityMedium: 12, priorityLow: 48, autoEscalate: true, escalationLevels: 3 },
-  { _id: '2', category: 'Water Supply', department: 'Delhi Jal Board', priorityHigh: 4, priorityMedium: 24, priorityLow: 72, autoEscalate: true, escalationLevels: 3 },
-  { _id: '3', category: 'Electricity', department: 'BSES / TPDDL', priorityHigh: 3, priorityMedium: 18, priorityLow: 60, autoEscalate: true, escalationLevels: 3 },
-  { _id: '4', category: 'Sanitation', department: 'Municipal Corporation of Delhi', priorityHigh: 6, priorityMedium: 24, priorityLow: 72, autoEscalate: true, escalationLevels: 3 },
-  { _id: '5', category: 'Road & Infrastructure', department: 'Public Works Department', priorityHigh: 4, priorityMedium: 24, priorityLow: 96, autoEscalate: true, escalationLevels: 3 },
-  { _id: '6', category: 'Public Safety', department: 'Delhi Police', priorityHigh: 1, priorityMedium: 8, priorityLow: 48, autoEscalate: true, escalationLevels: 3 },
-];
-
-const dummyAudit = [
-  { createdAt: new Date(Date.now() - 5 * 60 * 1000), action: 'CREATE_COMPLAINT', performedByName: 'Aarav Citizen', role: 'PUBLIC', targetType: 'complaint', details: 'New HIGH complaint: Traffic at Laxmi Nagar' },
-  { createdAt: new Date(Date.now() - 15 * 60 * 1000), action: 'UPDATE_STATUS', performedByName: 'Rajesh Kumar', role: 'ADMIN', targetType: 'complaint', details: 'Status → IN_PROGRESS' },
-  { createdAt: new Date(Date.now() - 30 * 60 * 1000), action: 'REASSIGN', performedByName: 'Priya Sharma', role: 'ADMIN', targetType: 'complaint', details: 'Reassigned to Meera Joshi' },
-  { createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), action: 'UPDATE_SLA', performedByName: 'Commissioner Singh', role: 'SUPER_ADMIN', targetType: 'sla', details: 'Updated SLA for Traffic: HIGH=2h' },
-  { createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), action: 'CREATE_USER', performedByName: 'Commissioner Singh', role: 'SUPER_ADMIN', targetType: 'user', details: 'Created ADMIN: Deepak Verma' },
-  { createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), action: 'LOGIN', performedByName: 'Aarav Citizen', role: 'PUBLIC', targetType: 'auth', details: 'Aarav Citizen logged in' },
-  { createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), action: 'RESOLVE_COMPLAINT', performedByName: 'Amit Singh', role: 'ADMIN', targetType: 'complaint', details: 'Resolved electricity outage at Rohini' },
-  { createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), action: 'SYSTEM_SEED', performedByName: 'System', role: 'SYSTEM', targetType: 'system', details: 'Database seeded with demo data' },
-];
