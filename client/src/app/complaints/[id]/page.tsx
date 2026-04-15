@@ -67,9 +67,9 @@ export default function ComplaintDetailPage() {
     );
   }
 
-  const priorityColor = PRIORITY_COLORS[complaint.priority];
-  const statusColor = STATUS_COLORS[complaint.status];
-  const icon = CATEGORY_ICONS[complaint.category] || '📋';
+  const priorityColor = PRIORITY_COLORS[complaint.priority as keyof typeof PRIORITY_COLORS];
+  const statusColor = STATUS_COLORS[complaint.status as keyof typeof STATUS_COLORS];
+  const icon = CATEGORY_ICONS[complaint.category as string] || '📋';
   const remaining = new Date(complaint.slaDeadline).getTime() - Date.now();
   const hours = Math.max(0, Math.floor(remaining / (1000 * 60 * 60)));
   const mins = Math.max(0, Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60)));

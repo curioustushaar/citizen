@@ -47,12 +47,12 @@ export default function ResolutionTimeChart({ data }: { data: ResolutionData | n
           <AreaChart data={trend} margin={{ top: 5, right: 5, bottom: 5, left: -10 }}>
             <defs>
               <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="colorComplaints" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -71,18 +71,18 @@ export default function ResolutionTimeChart({ data }: { data: ResolutionData | n
             <Area
               type="monotone"
               dataKey="avgHours"
-              stroke="#3b82f6"
+              stroke="#06b6d4"
               fill="url(#colorHours)"
               strokeWidth={2}
-              dot={{ r: 3, fill: '#3b82f6' }}
+              dot={{ r: 3, fill: '#06b6d4' }}
             />
             <Area
               type="monotone"
               dataKey="complaints"
-              stroke="#a855f7"
+              stroke="#8b5cf6"
               fill="url(#colorComplaints)"
               strokeWidth={2}
-              dot={{ r: 3, fill: '#a855f7' }}
+              dot={{ r: 3, fill: '#8b5cf6' }}
             />
           </AreaChart>
         </ResponsiveContainer>

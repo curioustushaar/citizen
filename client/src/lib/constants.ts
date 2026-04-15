@@ -23,16 +23,16 @@ export const DELHI_DISTRICTS = [
 ] as const;
 
 export const PRIORITY_COLORS = {
-  HIGH: { bg: 'bg-danger-500/20', text: 'text-danger-400', border: 'border-danger-500/30', dot: 'bg-danger-500' },
-  MEDIUM: { bg: 'bg-warning-500/20', text: 'text-warning-400', border: 'border-warning-500/30', dot: 'bg-warning-500' },
-  LOW: { bg: 'bg-success-500/20', text: 'text-success-400', border: 'border-success-500/30', dot: 'bg-success-500' },
+  HIGH: { bg: 'bg-danger-500/15', text: 'text-danger-400', border: 'border-danger-500/25', dot: 'bg-danger-500' },
+  MEDIUM: { bg: 'bg-warning-500/15', text: 'text-warning-400', border: 'border-warning-500/25', dot: 'bg-warning-500' },
+  LOW: { bg: 'bg-success-500/15', text: 'text-success-400', border: 'border-success-500/25', dot: 'bg-success-500' },
 } as const;
 
 export const STATUS_COLORS = {
-  PENDING: { bg: 'bg-warning-500/20', text: 'text-warning-400', label: 'Pending' },
-  IN_PROGRESS: { bg: 'bg-primary-500/20', text: 'text-primary-400', label: 'In Progress' },
-  RESOLVED: { bg: 'bg-success-500/20', text: 'text-success-400', label: 'Resolved' },
-  ESCALATED: { bg: 'bg-danger-500/20', text: 'text-danger-400', label: 'Escalated' },
+  PENDING: { bg: 'bg-warning-500/15', text: 'text-warning-400', label: 'Pending' },
+  IN_PROGRESS: { bg: 'bg-primary-500/15', text: 'text-primary-400', label: 'In Progress' },
+  RESOLVED: { bg: 'bg-success-500/15', text: 'text-success-400', label: 'Resolved' },
+  ESCALATED: { bg: 'bg-danger-500/15', text: 'text-danger-400', label: 'Escalated' },
 } as const;
 
 export const CATEGORY_ICONS: Record<string, string> = {
@@ -46,12 +46,12 @@ export const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export const DEPARTMENT_COLORS: Record<string, string> = {
-  'Delhi Traffic Police': '#3b82f6',
-  'Delhi Jal Board': '#06b6d4',
+  'Delhi Traffic Police': '#06b6d4',
+  'Delhi Jal Board': '#0d9488',
   'BSES / TPDDL': '#f59e0b',
-  'Municipal Corporation of Delhi': '#22c55e',
+  'Municipal Corporation of Delhi': '#10b981',
   'Public Works Department': '#8b5cf6',
-  'Delhi Police': '#ef4444',
+  'Delhi Police': '#f43f5e',
   'General Administration': '#64748b',
 };
 

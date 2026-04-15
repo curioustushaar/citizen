@@ -79,9 +79,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems = getNavItems();
 
   const roleColors: Record<string, string> = {
-    PUBLIC: 'from-success-500 to-success-600',
-    ADMIN: 'from-primary-500 to-primary-600',
-    SUPER_ADMIN: 'from-accent-500 to-accent-600',
+    PUBLIC: 'from-emerald-500 to-teal-600',
+    ADMIN: 'from-cyan-500 to-blue-600',
+    SUPER_ADMIN: 'from-violet-500 to-purple-600',
+  };
+
+  const roleBadgeBg: Record<string, string> = {
+    PUBLIC: 'bg-emerald-500/10 text-emerald-400',
+    ADMIN: 'bg-cyan-500/10 text-cyan-400',
+    SUPER_ADMIN: 'bg-violet-500/10 text-violet-400',
   };
 
   return (
@@ -89,8 +95,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       initial={false}
       animate={{ width: collapsed ? 72 : 260 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="fixed left-0 top-0 bottom-0 z-40 flex flex-col
-                 bg-surface-900/80 backdrop-blur-xl border-r border-white/5"
+      className="fixed left-0 top-0 bottom-0 z-40 flex flex-col border-r border-white/[0.06] premium-sidebar"
     >
       {/* Logo Section - Hidden for all Superadmins to maintain a clean command-center feel */}
       {user?.role !== 'SUPER_ADMIN' && (
@@ -123,19 +128,24 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* User Info */}
       {user && (
-        <div className={`px-3 py-3 border-b border-white/5 ${collapsed ? 'flex justify-center' : ''}`}>
+        <div className={`px-3 py-3 border-b border-white/[0.06] ${collapsed ? 'flex justify-center' : ''}`}>
           {collapsed ? (
-            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center`}>
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center shadow-lg`}>
               <User className="w-4 h-4 text-white" />
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center flex-shrink-0`}>
+              <div
+                className={`w-9 h-9 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center flex-shrink-0`}
+                style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+              >
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-                <p className="text-[10px] text-white/30">{user.role.replace('_', ' ')}</p>
+                <p className={`text-[10px] font-medium ${roleBadgeBg[user.role]} inline-block px-1.5 py-0.5 rounded mt-0.5`}>
+                  {user.role.replace('_', ' ')}
+                </p>
               </div>
             </div>
           )}
@@ -174,11 +184,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="px-2 py-3 border-t border-white/5 space-y-1">
+      <div className="px-2 py-3 border-t border-white/[0.06] space-y-1">
         {user ? (
           <button
             onClick={() => { logout(); router.push('/login'); }}
-            className={`nav-link w-full text-danger-400/60 hover:text-danger-400 ${collapsed ? 'justify-center px-0' : ''}`}
+            className={`nav-link w-full text-danger-400/60 hover:text-danger-400 hover:bg-danger-500/5 ${collapsed ? 'justify-center px-0' : ''}`}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             {!collapsed && <span className="text-sm">Logout</span>}
