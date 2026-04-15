@@ -53,7 +53,7 @@ export default function DepartmentChart({ data }: { data: DeptData[] }) {
               {shortNames.map((entry, index) => (
                 <Cell
                   key={index}
-                  fill={DEPARTMENT_COLORS[entry.department] || '#3b82f6'}
+                  fill={DEPARTMENT_COLORS[entry.department] || '#06b6d4'}
                   fillOpacity={0.8}
                 />
               ))}

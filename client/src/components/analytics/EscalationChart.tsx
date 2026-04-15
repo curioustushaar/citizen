@@ -7,7 +7,7 @@ interface EscalationData {
   byCategory: { category: string; count: number }[];
 }
 
-const COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#22c55e', '#a855f7', '#06b6d4'];
+const COLORS = ['#f43f5e', '#f59e0b', '#06b6d4', '#10b981', '#8b5cf6', '#0d9488'];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {

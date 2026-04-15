@@ -16,7 +16,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-950">
+    <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
       <div
         className={`hidden lg:flex transition-all duration-300 ${
@@ -30,7 +30,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {mobileSidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0"
+            style={{
+              background: 'rgba(5, 8, 16, 0.75)',
+              backdropFilter: 'blur(8px)',
+            }}
             onClick={() => setMobileSidebarOpen(false)}
           />
           <div className="relative w-[260px] z-50">

@@ -63,7 +63,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-white uppercase tracking-tight">
             Central Oversight Dashboard
           </h1>
-          <p className="text-sm text-white/40 mt-1">
+          <p className="text-sm text-white/35 mt-1">
             Real-time overview of Delhi NCR grievance intelligence
             {user && <span className="text-primary-400"> • Logged in as {user.name}</span>}
           </p>
@@ -71,7 +71,12 @@ export default function DashboardPage() {
         {!user && (
           <button
             onClick={() => router.push('/login')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-500/10 border border-primary-500/30 text-primary-400 rounded-xl text-sm font-medium hover:bg-primary-500/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
+            style={{
+              background: 'rgba(6, 182, 212, 0.08)',
+              border: '1px solid rgba(6, 182, 212, 0.2)',
+              color: '#22d3ee',
+            }}
           >
             <LogIn className="w-4 h-4" />
             Login to Access More

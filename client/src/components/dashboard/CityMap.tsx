@@ -15,9 +15,9 @@ interface Complaint {
 }
 
 const markerColors: Record<string, string> = {
-  HIGH: '#ef4444',
+  HIGH: '#f43f5e',
   MEDIUM: '#f59e0b',
-  LOW: '#22c55e',
+  LOW: '#10b981',
 };
 
 export default function CityMap({ complaints }: { complaints: Complaint[] }) {
