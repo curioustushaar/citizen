@@ -1,0 +1,239 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  :root {
+    --bg-primary: 222 47% 6%;
+    --bg-secondary: 222 47% 9%;
+    --bg-card: 222 47% 11%;
+    --border-color: 217 33% 18%;
+    --text-primary: 210 40% 98%;
+    --text-secondary: 215 20% 65%;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(217, 33%, 22%) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(217, 33%, 22%);
+    border-radius: 20px;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: hsl(222, 47%, 5%);
+    color: hsl(210, 40%, 98%);
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface-800/60 backdrop-blur-xl border border-white/5
+           rounded-2xl shadow-glass transition-all duration-300;
+  }
+
+  .glass-card-hover:hover {
+    @apply border-primary-500/30 shadow-glow;
+  }
+
+  .gradient-border {
+    position: relative;
+    background: hsl(222, 47%, 11%);
+    border-radius: 1rem;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 1rem;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(168, 85, 247, 0.4), rgba(59, 130, 246, 0.1));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    -webkit-mask-composite: xor;
+    pointer-events: none;
+  }
+
+  .stat-card {
+    @apply glass-card p-6 relative overflow-hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-color, rgba(59, 130, 246, 0.6)), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .stat-card:hover::after {
+    opacity: 1;
+  }
+
+  .shimmer-bg {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      rgba(59, 130, 246, 0.05) 37%,
+      transparent 63%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-400 via-accent-400 to-primary-400;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-500
+           text-white font-semibold rounded-xl
+           shadow-lg shadow-primary-500/25
+           hover:shadow-glow hover:from-primary-500 hover:to-primary-400
+           active:scale-[0.98]
+           transition-all duration-200;
+  }
+
+  .btn-danger {
+    @apply px-6 py-3 bg-gradient-to-r from-danger-600 to-danger-500
+           text-white font-semibold rounded-xl
+           shadow-lg shadow-danger-500/25
+           hover:shadow-glow-danger hover:from-danger-500 hover:to-danger-400
+           active:scale-[0.98]
+           transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-surface-800/80 border border-white/10
+           rounded-xl text-white placeholder-white/30
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50
+           focus:border-primary-500/50
+           transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-high {
+    @apply bg-danger-500/20 text-danger-400 border border-danger-500/30;
+  }
+
+  .badge-medium {
+    @apply bg-warning-500/20 text-warning-400 border border-warning-500/30;
+  }
+
+  .badge-low {
+    @apply bg-success-500/20 text-success-400 border border-success-500/30;
+  }
+
+  .badge-pending {
+    @apply bg-warning-500/20 text-warning-400;
+  }
+
+  .badge-in-progress {
+    @apply bg-primary-500/20 text-primary-400;
+  }
+
+  .badge-resolved {
+    @apply bg-success-500/20 text-success-400;
+  }
+
+  .badge-escalated {
+    @apply bg-danger-500/20 text-danger-400;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl
+           text-white/60 hover:text-white hover:bg-white/5
+           transition-all duration-200;
+  }
+
+  .nav-link-active {
+    @apply text-white bg-primary-500/10 border border-primary-500/20
+           shadow-sm shadow-primary-500/10;
+  }
+}
+
+/* Custom Leaflet styles for dark theme */
+.leaflet-container {
+  background: hsl(222, 47%, 8%) !important;
+  border-radius: 1rem;
+}
+
+.leaflet-control-zoom a {
+  background: hsl(222, 47%, 15%) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: hsl(222, 47%, 11%) !important;
+  color: white !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+  background: hsl(222, 47%, 11%) !important;
+}
+
+.custom-marker {
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Neural network animation */
+.neural-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.6);
+  position: absolute;
+  animation: neuralPulse 2s ease-in-out infinite;
+}
+
+@keyframes neuralPulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.8); opacity: 1; }
+}
+
+/* Typing cursor animation */
+.typing-cursor::after {
+  content: '|';
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Grid background pattern */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}

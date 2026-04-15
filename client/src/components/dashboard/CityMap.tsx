@@ -1,0 +1,93 @@
+'use client';
+
+import { useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { DELHI_CENTER, PRIORITY_COLORS, CATEGORY_ICONS } from '@/lib/constants';
+import 'leaflet/dist/leaflet.css';
+
+interface Complaint {
+  complaintId: string;
+  description: string;
+  category: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: string;
+  location: { lat: number; lng: number; area: string; district: string };
+}
+
+const markerColors: Record<string, string> = {
+  HIGH: '#ef4444',
+  MEDIUM: '#f59e0b',
+  LOW: '#22c55e',
+};
+
+export default function CityMap({ complaints }: { complaints: Complaint[] }) {
+  const markers = useMemo(() => complaints || [], [complaints]);
+
+  return (
+    <div className="glass-card overflow-hidden h-full min-h-[400px]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Live Complaint Map</h3>
+          <p className="text-xs text-white/40">Delhi NCR Region • Real-time tracking</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {(['HIGH', 'MEDIUM', 'LOW'] as const).map((p) => (
+            <div key={p} className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: markerColors[p] }}
+              />
+              <span className="text-[10px] text-white/50 uppercase">{p}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="h-[calc(100%-52px)]">
+        <MapContainer
+          center={[DELHI_CENTER.lat, DELHI_CENTER.lng]}
+          zoom={11}
+          className="h-full w-full"
+          zoomControl={true}
+          attributionControl={false}
+        >
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
+          {markers.map((c) => (
+            <CircleMarker
+              key={c.complaintId}
+              center={[c.location.lat, c.location.lng]}
+              radius={c.priority === 'HIGH' ? 10 : c.priority === 'MEDIUM' ? 7 : 5}
+              pathOptions={{
+                color: markerColors[c.priority],
+                fillColor: markerColors[c.priority],
+                fillOpacity: 0.6,
+                weight: 2,
+              }}
+            >
+              <Popup>
+                <div className="text-sm min-w-[200px]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">{CATEGORY_ICONS[c.category] || '📋'}</span>
+                    <span className="font-semibold text-white">{c.category}</span>
+                  </div>
+                  <p className="text-white/70 text-xs mb-2 line-clamp-2">{c.description}</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-white/50">📍 {c.location.area}</span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                        PRIORITY_COLORS[c.priority].bg
+                      } ${PRIORITY_COLORS[c.priority].text}`}
+                    >
+                      {c.priority}
+                    </span>
+                  </div>
+                </div>
+              </Popup>
+            </CircleMarker>
+          ))}
+        </MapContainer>
+      </div>
+    </div>
+  );
+}
