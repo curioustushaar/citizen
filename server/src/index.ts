@@ -10,6 +10,7 @@ import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import slaRoutes from './routes/sla';
 import auditRoutes from './routes/audit';
+import departmentRoutes from './routes/departments';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/simulate', simulateRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sla', slaRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -39,6 +41,6 @@ app.get('/api/health', (_req, res) => {
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📋 Routes: auth, complaints, officers, analytics, simulate, users, sla, audit-logs`);
+    console.log(`📋 Routes: auth, complaints, officers, analytics, simulate, users, sla, audit-logs, departments`);
   });
 });

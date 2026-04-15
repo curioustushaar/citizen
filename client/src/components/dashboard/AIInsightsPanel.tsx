@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Sparkles } from 'lucide-react';
 import { AI_INSIGHTS } from '@/lib/constants';
+import { api } from '@/lib/api';
 
 const insightTypeStyles = {
   warning: 'border-warning-500/20 bg-warning-500/5',
@@ -41,18 +42,25 @@ function TypingText({ text, speed = 30 }: { text: string; speed?: number }) {
 }
 
 export default function AIInsightsPanel() {
-  const [visibleInsights, setVisibleInsights] = useState<typeof AI_INSIGHTS>([]);
+  const [loading, setLoading] = useState(true);
+  const [visibleInsights, setVisibleInsights] = useState<any[]>([]);
 
   useEffect(() => {
-    // Sequentially reveal insights
-    const timers: NodeJS.Timeout[] = [];
-    AI_INSIGHTS.slice(0, 5).forEach((insight, i) => {
-      const timer = setTimeout(() => {
-        setVisibleInsights((prev) => [...prev, insight]);
-      }, i * 2000);
-      timers.push(timer);
-    });
-    return () => timers.forEach(clearTimeout);
+    const fetchInsights = async () => {
+      setLoading(true);
+      const res = await api.getAIInsights();
+      if (res.success) {
+        // Sequentially reveal insights for a "real-time" feel
+        const insights = res.data as any[];
+        insights.forEach((insight, i) => {
+          setTimeout(() => {
+            setVisibleInsights((prev) => [...prev, insight]);
+          }, i * 1500);
+        });
+      }
+      setLoading(false);
+    };
+    fetchInsights();
   }, []);
 
   return (

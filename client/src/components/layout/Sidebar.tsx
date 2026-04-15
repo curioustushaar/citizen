@@ -68,14 +68,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       ];
     }
 
-    // SUPER_ADMIN
+    // SUPER_ADMIN - Strategic Oversight Only
     return [
       ...common,
       { label: 'Control Room', icon: Shield, href: '/superadmin' },
-      { label: 'Officer Panel', icon: Building2, href: '/officer' },
-      { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
       { label: 'Analytics', icon: BarChart3, href: '/analytics' },
-      { label: 'Admin Panel', icon: Users, href: '/admin' },
     ];
   };
 
@@ -95,26 +92,34 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       className="fixed left-0 top-0 bottom-0 z-40 flex flex-col
                  bg-surface-900/80 backdrop-blur-xl border-r border-white/5"
     >
-      {/* Logo */}
-      <div className="h-16 flex items-center gap-3 px-4 border-b border-white/5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500
-                        flex items-center justify-center flex-shrink-0">
-          <Zap className="w-5 h-5 text-white" />
+      {/* Logo Section - Hidden for all Superadmins to maintain a clean command-center feel */}
+      {user?.role !== 'SUPER_ADMIN' && (
+        <div className="h-16 flex items-center gap-3 px-4 border-b border-white/5">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500
+                          flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="overflow-hidden whitespace-nowrap"
+              >
+                <p className="text-sm font-bold text-white uppercase tracking-tighter">
+                  {pathname.includes('/superadmin') ? 'Superadmin' :
+                    pathname.includes('/admin') ? 'Officer Portal' :
+                      'Grievance Node'}
+                </p>
+                <p className="text-[9px] text-white/30 uppercase tracking-[0.3em] font-black">
+                  {pathname.includes('/superadmin') ? 'National oversight' : 'Govt. Intelligence'}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              className="overflow-hidden whitespace-nowrap"
-            >
-              <p className="text-sm font-bold text-white">AI Grievance</p>
-              <p className="text-[9px] text-white/30">Smart City Resolver</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      )}
 
       {/* User Info */}
       {user && (

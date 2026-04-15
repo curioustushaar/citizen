@@ -4,7 +4,7 @@ import { verifyAuth, requireRole } from '../middleware/auth';
 
 const router = Router();
 
-router.use(verifyAuth, requireRole('SUPER_ADMIN'));
+router.use(verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'));
 
 router.get('/', getUsers);
 router.post('/', createUser);

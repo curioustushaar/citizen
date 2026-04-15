@@ -106,8 +106,8 @@ export default function ComplaintTable({ complaints }: { complaints: Complaint[]
           </thead>
           <tbody>
             {filtered.map((c, i) => {
-              const priority = PRIORITY_COLORS[c.priority];
-              const status = STATUS_COLORS[c.status];
+              const priority = PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW;
+              const status = STATUS_COLORS[c.status] || STATUS_COLORS.PENDING;
               return (
                 <motion.tr
                   key={c.complaintId}
@@ -141,7 +141,7 @@ export default function ComplaintTable({ complaints }: { complaints: Complaint[]
                   </td>
                   <td className="px-4 py-3">
                     <span className={`badge text-[10px] ${status.bg} ${status.text}`}>
-                      {status.label}
+                      {status.label || c.status}
                     </span>
                   </td>
                   <td className="px-4 py-3">

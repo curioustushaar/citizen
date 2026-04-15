@@ -23,13 +23,27 @@ export const getSummary = async (_req: Request, res: Response) => {
 export const getDepartmentStats = async (_req: Request, res: Response) => {
   try {
     const stats = await Complaint.aggregate([
-      { $group: { _id: '$department', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+      {
+        $group: {
+          _id: '$department',
+          total: { $sum: 1 },
+          pending: {
+            $sum: { $cond: [{ $in: ['$status', ['PENDING', 'IN_PROGRESS']] }, 1, 0] }
+          },
+          resolved: {
+            $sum: { $cond: [{ $eq: ['$status', 'RESOLVED'] }, 1, 0] }
+          }
+        }
+      },
+      { $sort: { total: -1 } },
     ]);
 
     const data = stats.map((s) => ({
-      department: s._id,
-      count: s.count,
+      department: s._id || 'Unassigned',
+      total: s.total,
+      pending: s.pending,
+      resolved: s.resolved,
+      performance: s.total > 0 ? Math.round((s.resolved / s.total) * 100) : 0
     }));
 
     res.json({ success: true, data });
@@ -41,32 +55,57 @@ export const getDepartmentStats = async (_req: Request, res: Response) => {
 // GET /api/analytics/resolution
 export const getResolutionStats = async (_req: Request, res: Response) => {
   try {
-    const resolved = await Complaint.find({
-      status: 'RESOLVED',
-      resolvedAt: { $ne: null },
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const stats = await Complaint.aggregate([
+      {
+        $match: {
+          status: 'RESOLVED',
+          resolvedAt: { $ne: null },
+          createdAt: { $gte: sevenDaysAgo }
+        }
+      },
+      {
+        $project: {
+          day: { $dateToString: { format: '%a', date: '$createdAt' } },
+          resolutionTime: {
+            $divide: [
+              { $subtract: ['$resolvedAt', '$createdAt'] },
+              1000 * 60 * 60 // Convert to hours
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: '$day',
+          avgHours: { $avg: '$resolutionTime' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Map to preferred format
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const trendData = days.map(day => {
+      const dayData = stats.find(s => s._id === day);
+      return {
+        day,
+        avgHours: dayData ? parseFloat(dayData.avgHours.toFixed(1)) : 0,
+        complaints: dayData ? dayData.count : 0
+      };
     });
 
-    const avgTime =
-      resolved.length > 0
-        ? resolved.reduce((sum, c) => {
-            const diff =
-              new Date(c.resolvedAt!).getTime() - new Date(c.createdAt).getTime();
-            return sum + diff / (1000 * 60 * 60); // hours
-          }, 0) / resolved.length
-        : 0;
-
-    // Generate 7 days of mock trend data
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const trendData = days.map((day) => ({
-      day,
-      avgHours: parseFloat((Math.random() * 20 + 5).toFixed(1)),
-      complaints: Math.floor(Math.random() * 30 + 10),
-    }));
+    const totalResolved = stats.reduce((acc, s) => acc + s.count, 0);
+    const globalAvg = totalResolved > 0 
+      ? stats.reduce((acc, s) => acc + (s.avgHours * s.count), 0) / totalResolved 
+      : 0;
 
     res.json({
       success: true,
       data: {
-        averageResolutionHours: parseFloat(avgTime.toFixed(1)),
+        averageResolutionHours: parseFloat(globalAvg.toFixed(1)),
         trend: trendData,
       },
     });
@@ -75,50 +114,160 @@ export const getResolutionStats = async (_req: Request, res: Response) => {
   }
 };
 
+// GET /api/analytics/heatmap
+export const getHeatmapData = async (_req: Request, res: Response) => {
+  try {
+    const stats = await Complaint.aggregate([
+      {
+        $group: {
+          _id: {
+            area: '$location.area',
+            slot: {
+              $concat: [
+                { $substr: [{ $hour: '$createdAt' }, 0, 2] },
+                '-',
+                { $substr: [{ $add: [{ $hour: '$createdAt' }, 3] }, 0, 2] }
+              ]
+            }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $group: {
+          _id: '$_id.area',
+          slots: {
+            $push: {
+              time: '$_id.slot',
+              count: '$count'
+            }
+          }
+        }
+      },
+      { $limit: 15 }
+    ]);
+
+    const data = stats.map(s => ({
+      area: s._id || 'Unknown',
+      slots: s.slots
+    }));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to get heatmap' });
+  }
+};
+
 // GET /api/analytics/escalation
 export const getEscalationStats = async (_req: Request, res: Response) => {
   try {
     const stats = await Complaint.aggregate([
-      { $match: { status: 'ESCALATED' } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-
-    const total = await Complaint.countDocuments();
-    const escalated = await Complaint.countDocuments({ status: 'ESCALATED' });
-
-    res.json({
-      success: true,
-      data: {
-        rate: total > 0 ? parseFloat(((escalated / total) * 100).toFixed(1)) : 0,
-        byCategory: stats.map((s) => ({ category: s._id, count: s.count })),
+      {
+        $match: {
+          status: 'ESCALATED'
+        }
       },
-    });
+      {
+        $group: {
+          _id: '$department',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+    
+    const data = stats.map(s => ({
+      department: s._id || 'Unassigned',
+      escalations: s.count
+    }));
+
+    res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Failed to get escalation stats' });
   }
 };
 
-// GET /api/analytics/heatmap
-export const getHeatmapData = async (_req: Request, res: Response) => {
+// GET /api/analytics/insights (NEW: Dynamic AI Insights)
+export const getAIInsights = async (_req: Request, res: Response) => {
   try {
-    const areas = [
-      'Connaught Place', 'Laxmi Nagar', 'Dwarka', 'Rohini',
-      'Saket', 'Janakpuri', 'Karol Bagh', 'Chandni Chowk',
-      'Nehru Place', 'Pitampura', 'Greater Kailash', 'Lajpat Nagar',
-    ];
-    const timeSlots = ['06-09', '09-12', '12-15', '15-18', '18-21', '21-00'];
+    const now = new Date();
+    const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const prevWeek = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    const heatmap = areas.map((area) => ({
-      area,
-      slots: timeSlots.map((time) => ({
-        time,
-        count: Math.floor(Math.random() * 15),
-      })),
-    }));
+    // 1. Find categories with significant increases
+    const categoryTrends = await Complaint.aggregate([
+      { $match: { createdAt: { $gte: prevWeek } } },
+      {
+        $group: {
+          _id: '$category',
+          lastWeekCount: {
+            $sum: { $cond: [{ $gte: ['$createdAt', lastWeek] }, 1, 0] }
+          },
+          prevWeekCount: {
+            $sum: { $cond: [{ $lt: ['$createdAt', lastWeek] }, 1, 0] }
+          }
+        }
+      }
+    ]);
 
-    res.json({ success: true, data: heatmap });
+    const insights = [];
+
+    categoryTrends.forEach(t => {
+      if (t.lastWeekCount > t.prevWeekCount && t.prevWeekCount > 0) {
+        const increase = Math.round(((t.lastWeekCount - t.prevWeekCount) / t.prevWeekCount) * 100);
+        if (increase > 10) {
+          insights.push({
+            text: `${t._id} complaints increased by ${increase}% this week compared to last.`,
+            type: increase > 30 ? 'warning' : 'info',
+            icon: '📈'
+          });
+        }
+      }
+    });
+
+    // 2. Hotspot Detection
+    const hotspots = await Complaint.aggregate([
+      { $match: { status: { $ne: 'RESOLVED' } } },
+      { $group: { _id: '$location.area', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 2 }
+    ]);
+
+    hotspots.forEach(h => {
+      if (h.count > 5) {
+        insights.push({
+          text: `Critical hotspot detected in ${h._id} with ${h.count} active issues.`,
+          type: 'danger',
+          icon: '🚨'
+        });
+      }
+    });
+
+    // 3. Efficiency Stats
+    const resolvedStats = await Complaint.countDocuments({ 
+      status: 'RESOLVED', 
+      createdAt: { $gte: lastWeek } 
+    });
+    
+    if (resolvedStats > 0) {
+      insights.push({
+        text: `Resolution efficiency is maintained with ${resolvedStats} tickets closed this week.`,
+        type: 'success',
+        icon: '✅'
+      });
+    }
+
+    // Fallback if no trends found
+    if (insights.length < 3) {
+      insights.push({
+        text: 'System processing real-time telemetry. No critical anomalies detected currently.',
+        type: 'success',
+        icon: '🛡️'
+      });
+    }
+
+    res.json({ success: true, data: insights });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to get heatmap' });
+    res.status(500).json({ success: false, error: 'Failed to generate insights' });
   }
 };

@@ -7,6 +7,7 @@ import Officer from './models/Officer';
 import User from './models/User';
 import SLAConfig from './models/SLAConfig';
 import AuditLog from './models/AuditLog';
+import Department from './models/Department';
 import {
   detectCategory,
   detectPriority,
@@ -17,26 +18,75 @@ import {
 
 dotenv.config();
 
+const departments = [
+  {
+    name: 'Delhi Police',
+    icon: '🚓',
+    categories: ['Public Safety', 'Crime', 'Harassment'],
+    hierarchy: [
+      { name: 'Constable', level: 1 },
+      { name: 'Head Constable', level: 2 },
+      { name: 'Sub Inspector', level: 3 },
+      { name: 'Inspector / SHO', level: 4 },
+      { name: 'DSP / ACP', level: 5 },
+      { name: 'SP / DCP', level: 6 },
+      { name: 'IG', level: 7 },
+      { name: 'Commissioner', level: 8 },
+    ],
+  },
+  {
+    name: 'Municipal Corporation (MCD)',
+    icon: '🏙️',
+    categories: ['Sanitation', 'Road & Infrastructure'],
+    hierarchy: [
+      { name: 'Ward Worker', level: 1 },
+      { name: 'Junior Engineer (JE)', level: 2 },
+      { name: 'Assistant Engineer (AE)', level: 3 },
+      { name: 'Executive Engineer', level: 4 },
+      { name: 'Municipal Commissioner', level: 5 },
+    ],
+  },
+  {
+    name: 'Electricity Department',
+    icon: '⚡',
+    categories: ['Electricity'],
+    hierarchy: [
+      { name: 'Lineman', level: 1 },
+      { name: 'Junior Engineer', level: 2 },
+      { name: 'Assistant Engineer', level: 3 },
+      { name: 'Executive Engineer', level: 4 },
+      { name: 'Chief Engineer', level: 5 },
+    ],
+  },
+];
+
 const officers = [
-  { name: 'Rajesh Kumar', department: 'Delhi Traffic Police', designation: 'Inspector', email: 'rajesh.kumar@dtp.gov.in', phone: '+91 98111 00001', performance: 88 },
-  { name: 'Priya Sharma', department: 'Delhi Jal Board', designation: 'Executive Engineer', email: 'priya.sharma@djb.gov.in', phone: '+91 98111 00002', performance: 92 },
-  { name: 'Amit Singh', department: 'BSES / TPDDL', designation: 'Senior Engineer', email: 'amit.singh@bses.gov.in', phone: '+91 98111 00003', performance: 78 },
-  { name: 'Sunita Gupta', department: 'Municipal Corporation of Delhi', designation: 'Sanitation Officer', email: 'sunita.gupta@mcd.gov.in', phone: '+91 98111 00004', performance: 85 },
-  { name: 'Vikram Mehta', department: 'Public Works Department', designation: 'Assistant Engineer', email: 'vikram.mehta@pwd.gov.in', phone: '+91 98111 00005', performance: 72 },
-  { name: 'Ananya Patel', department: 'Delhi Police', designation: 'Sub Inspector', email: 'ananya.patel@dp.gov.in', phone: '+91 98111 00006', performance: 90 },
-  { name: 'Deepak Verma', department: 'Delhi Traffic Police', designation: 'Sub Inspector', email: 'deepak.verma@dtp.gov.in', phone: '+91 98111 00007', performance: 82 },
-  { name: 'Meera Joshi', department: 'Delhi Jal Board', designation: 'Junior Engineer', email: 'meera.joshi@djb.gov.in', phone: '+91 98111 00008', performance: 76 },
+  // Police Hierarchy Demo
+  { name: 'Amit Sharma', department: 'Delhi Police', rank: 'Constable', designation: 'Constable', level: 1, email: 'amit.c@dp.gov.in', phone: '+91 90000 00001' },
+  { name: 'Rajiv Mehra', department: 'Delhi Police', rank: 'Sub Inspector', designation: 'Sub Inspector', level: 3, email: 'rajiv.si@dp.gov.in', phone: '+91 90000 00002' },
+  { name: 'Vikram Singh', department: 'Delhi Police', rank: 'Commissioner', designation: 'Commissioner', level: 8, email: 'comm.singh@dp.gov.in', phone: '+91 90000 00003' },
+  
+  // Municipal Hierarchy Demo
+  { name: 'Suresh Kumar', department: 'Municipal Corporation (MCD)', rank: 'Ward Worker', designation: 'Ward Worker', level: 1, email: 'suresh.w@mcd.gov.in', phone: '+91 90000 00004' },
+  { name: 'Anil Gupta', department: 'Municipal Corporation (MCD)', rank: 'Assistant Engineer (AE)', designation: 'Assistant Engineer', level: 3, email: 'anil.ae@mcd.gov.in', phone: '+91 90000 00005' },
+  
+  // Electricity Hierarchy Demo
+  { name: 'Mahesh Verma', department: 'Electricity Department', rank: 'Lineman', designation: 'Lineman', level: 1, email: 'mahesh.l@electricity.gov.in', phone: '+91 90000 00006' },
+  { name: 'Sanjay Rawat', department: 'Electricity Department', rank: 'Chief Engineer', designation: 'Chief Engineer', level: 5, email: 'sanjay.ce@electricity.gov.in', phone: '+91 90000 00007' },
 ];
 
 const users = [
   { name: 'Aarav Citizen', email: 'citizen@demo.com', password: 'demo123', role: 'PUBLIC' as const, department: null, region: 'Delhi' },
-  { name: 'Rohit Kumar', email: 'rohit@demo.com', password: 'demo123', role: 'PUBLIC' as const, department: null, region: 'Delhi' },
-  { name: 'Rajesh Kumar', email: 'admin@trafficpolice.gov.in', password: 'admin123', role: 'ADMIN' as const, department: 'Delhi Traffic Police', region: 'Delhi-Central' },
-  { name: 'Priya Sharma', email: 'admin@jalboard.gov.in', password: 'admin123', role: 'ADMIN' as const, department: 'Delhi Jal Board', region: 'Delhi-South' },
-  { name: 'Amit Singh', email: 'admin@bses.gov.in', password: 'admin123', role: 'ADMIN' as const, department: 'BSES / TPDDL', region: 'Delhi-West' },
-  { name: 'Sunita Gupta', email: 'admin@mcd.gov.in', password: 'admin123', role: 'ADMIN' as const, department: 'Municipal Corporation of Delhi', region: 'Delhi-North' },
-  { name: 'Commissioner Singh', email: 'superadmin@delhi.gov.in', password: 'super123', role: 'SUPER_ADMIN' as const, department: null, region: 'Delhi-NCR' },
-  { name: 'Secretary Verma', email: 'secretary@delhi.gov.in', password: 'super123', role: 'SUPER_ADMIN' as const, department: null, region: 'Delhi-NCR' },
+  { name: 'Commissioner Singh', email: process.env.SUPERADMIN_EMAIL || 'superadmin@delhi.gov.in', password: process.env.SUPERADMIN_PASSWORD || 'super123', role: 'SUPER_ADMIN' as const, department: null, region: 'Delhi-NCR' },
+  // Adding logins for the seeded officers
+  ...officers.map(o => ({
+    name: o.name,
+    email: o.email,
+    password: 'admin123',
+    role: 'ADMIN' as const,
+    department: o.department,
+    region: 'Delhi-NCR'
+  }))
 ];
 
 const slaConfigs = [
@@ -90,8 +140,13 @@ async function seed() {
     User.deleteMany({}),
     SLAConfig.deleteMany({}),
     AuditLog.deleteMany({}),
+    Department.deleteMany({}),
   ]);
   console.log('🗑️  Cleared all collections');
+
+  // Seed Departments
+  const createdDepartments = await Department.insertMany(departments);
+  console.log(`🏢 Seeded ${createdDepartments.length} departments`);
 
   // Seed Officers
   const createdOfficers = await Officer.insertMany(
@@ -126,10 +181,10 @@ async function seed() {
   // Seed Complaints
   const publicUsers = createdUsers.filter((u) => u.role === 'PUBLIC');
   const complaints = complaintDescriptions.map((c, i) => {
-    const category = detectCategory(c.desc);
+    const { category, confidence: aiConfidence } = detectCategory(c.desc);
     const priority = detectPriority(c.desc);
     const department = getDepartment(category);
-    const slaHours = calculateSLA(priority);
+    const slaDeadline = calculateSLA(priority);
     const officer = createdOfficers.find((o) => o.department === department) || createdOfficers[0];
     const status = statuses[i % statuses.length];
     const publicUser = publicUsers[i % publicUsers.length];
@@ -146,7 +201,7 @@ async function seed() {
       assignedOfficer: officer._id,
       assignedOfficerName: officer.name,
       confidence: Math.round((0.7 + Math.random() * 0.25) * 100) / 100,
-      slaDeadline: new Date(Date.now() + slaHours * 60 * 60 * 1000),
+      slaDeadline,
       userId: publicUser._id.toString(),
       userName: publicUser.name,
       notes: [],

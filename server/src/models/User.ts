@@ -10,6 +10,13 @@ export interface IUser extends Document {
   department: string | null;
   region: string | null;
   phone: string;
+  employeeId: string;
+  officeAddress: string;
+  rank: string;
+  level: number;
+  district: string;
+  state: string;
+  pincode: string;
   avatar: string;
   isActive: boolean;
   createdAt: Date;
@@ -24,6 +31,13 @@ const UserSchema = new Schema<IUser>(
     department: { type: String, default: null },
     region: { type: String, default: null },
     phone: { type: String, default: '' },
+    employeeId: { type: String, default: '' },
+    officeAddress: { type: String, default: '' },
+    rank: { type: String, default: '' },
+    level: { type: Number, default: 1 },
+    district: { type: String, default: '' },
+    state: { type: String, default: '' },
+    pincode: { type: String, default: '' },
     avatar: { type: String, default: '' },
     isActive: { type: Boolean, default: true },
   },

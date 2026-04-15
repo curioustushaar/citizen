@@ -53,9 +53,9 @@ export default function CityMap({ complaints }: { complaints: Complaint[] }) {
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
-          {markers.map((c) => (
+          {markers.map((c, i) => (
             <CircleMarker
-              key={c.complaintId}
+              key={c.complaintId || (c as any)._id || i}
               center={[c.location.lat, c.location.lng]}
               radius={c.priority === 'HIGH' ? 10 : c.priority === 'MEDIUM' ? 7 : 5}
               pathOptions={{
@@ -76,8 +76,8 @@ export default function CityMap({ complaints }: { complaints: Complaint[] }) {
                     <span className="text-white/50">📍 {c.location.area}</span>
                     <span
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                        PRIORITY_COLORS[c.priority].bg
-                      } ${PRIORITY_COLORS[c.priority].text}`}
+                        (PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).bg
+                      } ${(PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).text}`}
                     >
                       {c.priority}
                     </span>

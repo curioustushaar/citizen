@@ -96,46 +96,9 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
           )}
         </button>
 
-        {/* User Profile / Login */}
+        {/* User / Login */}
         <div className="relative flex items-center gap-2 pl-3 border-l border-white/10">
-          {user ? (
-            <>
-              <button
-                onClick={() => setShowDropdown(!showDropdown)}
-                className="flex items-center gap-2 hover:bg-white/5 px-2 py-1 rounded-lg transition-colors"
-              >
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center`}>
-                  {user.role === 'SUPER_ADMIN' ? <Shield className="w-4 h-4 text-white" /> : <User className="w-4 h-4 text-white" />}
-                </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-white">{user.name}</p>
-                  <p className="text-[10px] text-white/40">{roleLabels[user.role]}{user.department ? ` • ${user.department}` : ''}</p>
-                </div>
-                <ChevronDown className="w-3 h-3 text-white/30 hidden md:block" />
-              </button>
-
-              {/* Dropdown */}
-              {showDropdown && (
-                <div className="absolute right-0 top-12 w-48 bg-surface-800 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-white/5">
-                    <p className="text-xs font-semibold text-white">{user.name}</p>
-                    <p className="text-[10px] text-white/30">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowDropdown(false);
-                      logout();
-                      router.push('/login');
-                    }}
-                    className="w-full px-4 py-2.5 text-left text-sm text-danger-400 hover:bg-white/5 flex items-center gap-2 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
+          {!user && (
             <button
               onClick={() => router.push('/login')}
               className="flex items-center gap-2 px-3 py-2 bg-primary-500/10 border border-primary-500/30 text-primary-400 rounded-xl text-sm font-medium hover:bg-primary-500/20 transition-all"
