@@ -55,15 +55,5 @@ export const DEPARTMENT_COLORS: Record<string, string> = {
   'General Administration': '#64748b',
 };
 
-export const AI_INSIGHTS = [
-  { text: 'Traffic complaints increased by 32% in East Delhi this week', type: 'warning' as const, icon: '📈' },
-  { text: 'Water supply issues detected in Dwarka cluster — possible pipeline fault', type: 'danger' as const, icon: '🔍' },
-  { text: 'Sanitation complaints reduced by 18% after MCD drive in South Delhi', type: 'success' as const, icon: '✅' },
-  { text: 'Electricity outages correlated with transformer overload in Rohini area', type: 'info' as const, icon: '⚡' },
-  { text: 'Predicted: 40% increase in waterlogging complaints due to upcoming monsoon', type: 'warning' as const, icon: '🌧️' },
-  { text: 'Road infrastructure complaints highest during 6PM–9PM peak hours', type: 'info' as const, icon: '🕐' },
-  { text: 'AI detected unusual spike in public safety complaints near Daryaganj', type: 'danger' as const, icon: '🚨' },
-  { text: 'Average resolution time improved by 2.3 hours compared to last month', type: 'success' as const, icon: '⏱️' },
-];
 
 export const DELHI_CENTER = { lat: 28.6139, lng: 77.209 } as const;

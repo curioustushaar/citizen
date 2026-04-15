@@ -51,12 +51,12 @@ export const getComplaintById = async (req: Request, res: Response) => {
 export const createComplaint = async (req: Request, res: Response) => {
   try {
     const { description, location, userId, userName } = req.body;
-    const category = detectCategory(description);
+    const { category, confidence: aiConfidence } = detectCategory(description);
     const priority = detectPriority(description);
     const department = getDepartment(category);
-    const slaHours = calculateSLA(priority);
+    const slaDeadline = calculateSLA(priority);
     const complaintId = generateComplaintId();
-    const confidence = Math.round((0.7 + Math.random() * 0.25) * 100) / 100;
+    const confidence = aiConfidence;
 
     // Find officer in the right department
     const officer = await Officer.findOne({ department, isActive: true })
@@ -73,7 +73,7 @@ export const createComplaint = async (req: Request, res: Response) => {
       assignedOfficer: officer?._id || null,
       assignedOfficerName: officer?.name || null,
       confidence,
-      slaDeadline: new Date(Date.now() + slaHours * 60 * 60 * 1000),
+      slaDeadline,
       userId: userId || null,
       userName: userName || 'Anonymous',
     });
@@ -156,6 +156,86 @@ export const updateStatus = async (req: AuthRequest, res: Response) => {
       targetType: 'complaint',
       targetId: complaint.complaintId,
       details: `Status → ${status}${remarks ? `: ${remarks}` : ''}`,
+    });
+
+    res.json({ success: true, data: complaint });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// POST /api/complaints/:id/force-assign (SUPER_ADMIN only)
+export const forceAssign = async (req: AuthRequest, res: Response) => {
+  try {
+    const { officerId, officerName, remarks } = req.body;
+    const complaint = await Complaint.findOne({ complaintId: req.params.id });
+    if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+
+    // Decrement old officer, increment new
+    if (complaint.assignedOfficer) {
+      await Officer.findByIdAndUpdate(complaint.assignedOfficer, { $inc: { pendingCount: -1 } });
+    }
+    await Officer.findByIdAndUpdate(officerId, { $inc: { pendingCount: 1 } });
+
+    complaint.assignedOfficer = officerId;
+    complaint.assignedOfficerName = officerName;
+    complaint.notes.push({
+      text: `FORCE REASSIGN by Super Admin: ${remarks || 'No reason provided'}`,
+      addedBy: req.user?.name || 'Super Admin',
+      addedAt: new Date(),
+      attachment: null,
+    });
+    await complaint.save();
+
+    await AuditLog.create({
+      action: 'FORCE_REASSIGN',
+      performedBy: req.user?.userId || 'system',
+      performedByName: req.user?.name || 'System',
+      role: 'SUPER_ADMIN',
+      targetType: 'complaint',
+      targetId: complaint.complaintId,
+      details: `Force reassigned to ${officerName}. Reason: ${remarks}`,
+    });
+
+    res.json({ success: true, data: complaint });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// POST /api/complaints/:id/global-close (SUPER_ADMIN only)
+export const globalClose = async (req: AuthRequest, res: Response) => {
+  try {
+    const { remarks } = req.body;
+    const complaint = await Complaint.findOne({ complaintId: req.params.id });
+    if (!complaint) return res.status(404).json({ success: false, error: 'Not found' });
+
+    if (complaint.status === 'RESOLVED') return res.status(400).json({ success: false, error: 'Already resolved' });
+
+    if (complaint.assignedOfficer) {
+      await Officer.findByIdAndUpdate(complaint.assignedOfficer, {
+        $inc: { pendingCount: -1, resolvedCount: 1 },
+      });
+    }
+
+    complaint.status = 'RESOLVED';
+    complaint.resolvedAt = new Date();
+    complaint.notes.push({
+      text: `GLOBAL CLOSE by Super Admin: ${remarks || 'Administrative closure'}`,
+      addedBy: req.user?.name || 'Super Admin',
+      addedAt: new Date(),
+      attachment: null,
+    });
+    await complaint.save();
+
+    await AuditLog.create({
+      action: 'GLOBAL_CLOSE',
+      performedBy: req.user?.userId || 'system',
+      performedByName: req.user?.name || 'System',
+      role: 'SUPER_ADMIN',
+      targetType: 'complaint',
+      targetId: complaint.complaintId,
+      details: `Globally closed by Super Admin. Remarks: ${remarks}`,
     });
 
     res.json({ success: true, data: complaint });

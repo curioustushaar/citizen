@@ -23,7 +23,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function DepartmentChart({ data }: { data: DeptData[] }) {
   const shortNames = data?.map((d) => ({
     ...d,
-    short: d.department.split(' ').slice(0, 2).join(' '),
+    short: (d.department || 'Other').split(' ').slice(0, 2).join(' '),
   })) || [];
 
   return (

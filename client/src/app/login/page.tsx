@@ -1,249 +1,322 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Shield, User, Users, LogIn, UserPlus, Sparkles, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff, ShieldCheck, User, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
-const roles = [
-  {
-    key: 'PUBLIC',
-    label: 'Citizen',
-    desc: 'File complaints, track status, give feedback',
-    icon: User,
-    gradient: 'from-success-500 to-success-600',
-    email: 'citizen@demo.com',
-    password: 'demo123',
-  },
-  {
-    key: 'ADMIN',
-    label: 'Department Officer',
-    desc: 'Manage complaints, update status, add notes',
-    icon: Users,
-    gradient: 'from-primary-500 to-primary-600',
-    email: 'admin@trafficpolice.gov.in',
-    password: 'admin123',
-  },
-  {
-    key: 'SUPER_ADMIN',
-    label: 'Super Admin',
-    desc: 'Full control, SLA config, user management, audit',
-    icon: Shield,
-    gradient: 'from-accent-500 to-accent-600',
-    email: 'superadmin@delhi.gov.in',
-    password: 'super123',
-  },
-];
+type RoleTab = 'CITIZEN' | 'OFFICER';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, demoLogin, register } = useAuth();
-  const [mode, setMode] = useState<'demo' | 'login' | 'register'>('demo');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [role, setRole] = useState<RoleTab>('CITIZEN');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [loading, setLoading] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [particles, setParticles] = useState<any[]>([]);
 
-  const handleDemoLogin = async (role: string) => {
-    setLoading(role);
-    setError('');
-    const ok = await demoLogin(role);
-    if (ok) {
-      if (role === 'PUBLIC') router.push('/my-complaints');
-      else if (role === 'ADMIN') router.push('/officer');
-      else router.push('/superadmin');
-    } else {
-      setError('Login failed');
-    }
-    setLoading('');
-  };
+  useEffect(() => {
+    const p = [...Array(20)].map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 5}s`,
+      duration: `${3 + Math.random() * 4}s`,
+      size: `${2 + Math.random() * 4}px`,
+    }));
+    setParticles(p);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading('login');
+    setLoading(true);
     setError('');
-    const ok = await login(email, password);
+    const requiredRole = role === 'OFFICER' ? 'ADMIN' : 'PUBLIC';
+    const ok = await login(email, password, requiredRole);
     if (ok) {
-      router.push('/');
+      const u = JSON.parse(localStorage.getItem('grievance_user') || '{}');
+      if (u.role === 'SUPER_ADMIN') return router.push('/superadmin');
+      router.push(role === 'OFFICER' ? '/officer' : '/my-complaints');
     } else {
-      setError('Invalid email or password');
+      const stored = localStorage.getItem('grievance_user_auth_error_role');
+      if (stored) {
+        setError(`This account is registered as ${stored}. Please use the ${stored === 'ADMIN' ? 'Officer' : 'Citizen'} Login portal.`);
+        localStorage.removeItem('grievance_user_auth_error_role');
+      } else {
+        setError(`Invalid credentials or access denied for ${role === 'OFFICER' ? 'Officer' : 'Citizen'} portal.`);
+      }
     }
-    setLoading('');
+    setLoading(false);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading('register');
+    setLoading(true);
     setError('');
     const ok = await register({ name, email, password });
     if (ok) {
       router.push('/my-complaints');
     } else {
-      setError('Registration failed');
+      setError('Registration failed. Please try again.');
     }
-    setLoading('');
+    setLoading(false);
+  };
+
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setError('');
+    const roleKey = role === 'OFFICER' ? 'ADMIN' : 'PUBLIC';
+    const ok = await demoLogin(roleKey);
+    if (ok) {
+      const u = JSON.parse(localStorage.getItem('grievance_user') || '{}');
+      if (u.role === 'SUPER_ADMIN') return router.push('/superadmin');
+      router.push(role === 'OFFICER' ? '/officer' : '/my-complaints');
+    } else {
+      setError('Demo login failed');
+    }
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'hsl(222, 47%, 5%)' }}>
+    <div className="login-page-wrapper">
+      {/* Animated background particles */}
+      <div className="login-bg-particles">
+        {particles.map((p) => (
+          <div
+            key={p.id}
+            className="login-particle"
+            style={{
+              left: p.left,
+              top: p.top,
+              animationDelay: p.delay,
+              animationDuration: p.duration,
+              width: p.size,
+              height: p.size,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Radial gradient overlay */}
+      <div className="login-bg-gradient" />
+
+      {/* Main content */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg"
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className="login-container"
       >
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 mb-4">
-            <Shield className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-1">AI Grievance Intelligence</h1>
-          <p className="text-white/40 text-sm">Smart Sarkari Complaint Resolver</p>
+        {/* Government Emblem / Logo */}
+        <div className="login-emblem-section">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5, type: 'spring' }}
+            className="login-emblem"
+          >
+            {/* India Ashoka emblem style icon */}
+            <div className="login-emblem-inner">
+              <ShieldCheck className="w-10 h-10 text-amber-400" strokeWidth={1.5} />
+            </div>
+            {/* Glow ring */}
+            <div className="login-emblem-ring" />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <h1 className="login-title">AI Grievance Intelligence System</h1>
+            <p className="login-subtitle">Smart Sarkari Complaint Resolver</p>
+          </motion.div>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="flex gap-1 mb-6 bg-white/5 rounded-xl p-1">
-          {(['demo', 'login', 'register'] as const).map((m) => (
+        {/* Glass Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="login-card"
+        >
+          {/* Role Toggle */}
+          <div className="login-role-toggle">
             <button
-              key={m}
-              onClick={() => { setMode(m); setError(''); }}
-              className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all ${
-                mode === m ? 'bg-primary-500/20 text-white' : 'text-white/40 hover:text-white/60'
-              }`}
+              onClick={() => { setRole('CITIZEN'); setError(''); }}
+              className={`login-role-btn ${role === 'CITIZEN' ? 'login-role-btn-active' : ''}`}
             >
-              {m === 'demo' ? '⚡ Quick Demo' : m === 'login' ? '🔐 Login' : '📝 Register'}
+              <User className="w-4 h-4" />
+              <span>Citizen Login</span>
             </button>
-          ))}
-        </div>
-
-        {error && (
-          <div className="mb-4 px-4 py-2 rounded-xl bg-danger-500/10 border border-danger-500/20 text-danger-400 text-sm">
-            {error}
+            <button
+              onClick={() => { setRole('OFFICER'); setError(''); }}
+              className={`login-role-btn ${role === 'OFFICER' ? 'login-role-btn-active' : ''}`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Officer Login</span>
+            </button>
+            {/* Sliding indicator */}
+            <motion.div
+              className="login-role-indicator"
+              animate={{ x: role === 'CITIZEN' ? '0%' : '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
           </div>
-        )}
 
-        {/* Demo Mode */}
-        {mode === 'demo' && (
-          <div className="space-y-3">
-            <p className="text-xs text-white/30 text-center mb-2">Select a role to explore the system</p>
-            {roles.map((role, i) => {
-              const Icon = role.icon;
-              return (
-                <motion.button
-                  key={role.key}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  onClick={() => handleDemoLogin(role.key)}
-                  disabled={!!loading}
-                  className="w-full glass-card glass-card-hover p-4 flex items-center gap-4 text-left disabled:opacity-50"
+          {/* Mode label */}
+          <div className="login-mode-header">
+            <h2 className="login-mode-title">
+              {mode === 'login' ? 'Login' : 'Register'}{' '}
+              <span className="login-mode-title-thin">to your account</span>
+            </h2>
+          </div>
+
+          {/* Error */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="login-error"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Form */}
+          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="login-form">
+            {mode === 'register' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="login-field"
+              >
+                <div className="login-input-wrapper">
+                  <User className="login-input-icon" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="login-input"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            <div className="login-field">
+              <div className="login-input-wrapper">
+                <Mail className="login-input-icon" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="login-input"
+                  placeholder="Enter your email"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="login-field">
+              <div className="login-input-wrapper">
+                <Lock className="login-input-icon" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="login-input login-input-password"
+                  placeholder="Enter your password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="login-password-toggle"
                 >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${role.gradient} flex items-center justify-center flex-shrink-0`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">{role.label}</p>
-                    <p className="text-[11px] text-white/40 mt-0.5">{role.desc}</p>
-                    <p className="text-[10px] text-white/20 mt-1 font-mono">{role.email}</p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    {loading === role.key ? (
-                      <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-white/20" />
-                    )}
-                  </div>
-                </motion.button>
-              );
-            })}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {mode === 'login' && (
+              <div className="login-forgot-row">
+                <button type="button" className="login-forgot-btn">
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="login-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <div className="login-spinner" />
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  <span>{mode === 'login' ? 'Login' : 'Create Account'}</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Demo */}
+          <div className="login-demo-section">
+            <div className="login-divider">
+              <span>or try quick demo</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="login-demo-btn"
+            >
+              ⚡ Quick Demo as {role === 'CITIZEN' ? 'Citizen' : 'Officer'}
+            </button>
           </div>
-        )}
 
-        {/* Login Form */}
-        {mode === 'login' && (
-          <form onSubmit={handleLogin} className="glass-card p-6 space-y-4">
-            <div>
-              <label className="text-xs text-white/40 block mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs text-white/40 block mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2" disabled={!!loading}>
-              {loading === 'login' ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <><LogIn className="w-4 h-4" /> Sign In</>
-              )}
-            </button>
-          </form>
-        )}
+          {/* Toggle mode */}
+          <div className="login-toggle-mode">
+            {mode === 'login' ? (
+              <p>
+                Don&apos;t have an account?{' '}
+                <button onClick={() => { setMode('register'); setError(''); }} className="login-toggle-link">
+                  Register
+                </button>
+              </p>
+            ) : (
+              <p>
+                Already have an account?{' '}
+                <button onClick={() => { setMode('login'); setError(''); }} className="login-toggle-link">
+                  Login
+                </button>
+              </p>
+            )}
+          </div>
+        </motion.div>
 
-        {/* Register Form */}
-        {mode === 'register' && (
-          <form onSubmit={handleRegister} className="glass-card p-6 space-y-4">
-            <div>
-              <label className="text-xs text-white/40 block mb-1.5">Full Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input-field"
-                placeholder="Enter your full name"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs text-white/40 block mb-1.5">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs text-white/40 block mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input-field"
-                placeholder="Create a password"
-                required
-              />
-            </div>
-            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2" disabled={!!loading}>
-              {loading === 'register' ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <><UserPlus className="w-4 h-4" /> Create Account</>
-              )}
-            </button>
-          </form>
-        )}
-
-        <p className="text-center text-[10px] text-white/20 mt-6">
-          AI Grievance Intelligence System v2.0 • Powered by Smart City Governance
-        </p>
+        {/* Footer */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="login-footer"
+        >
+          AI Grievance Intelligence System v2.0 • Government of India • Smart City Initiative
+        </motion.p>
       </motion.div>
     </div>
   );

@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('grievance_user', JSON.stringify(usr));
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, requiredRole?: string): Promise<boolean> => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -66,16 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       const data = await res.json();
       if (data.success) {
+        const userRole = data.data.user.role;
+        // Super Admin can access Admin portal too
+        if (requiredRole && userRole !== requiredRole) {
+          const isSAAccessingAdmin = requiredRole === 'ADMIN' && userRole === 'SUPER_ADMIN';
+          if (!isSAAccessingAdmin) {
+            localStorage.setItem('grievance_user_auth_error_role', userRole);
+            return false;
+          }
+        }
         saveSession(data.data.token, data.data.user);
         return true;
       }
-    } catch {
-      // Backend unavailable — try demo match
-      const found = Object.values(demoUsers).find((u) => u.email === email);
-      if (found) {
-        saveSession('demo-token-' + found.role, found);
-        return true;
-      }
+    } catch (err) {
+      console.error('Login error:', err);
     }
     return false;
   };
@@ -92,13 +96,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         saveSession(data.data.token, data.data.user);
         return true;
       }
-    } catch {
-      // Frontend-only fallback
-      const usr = demoUsers[role];
-      if (usr) {
-        saveSession('demo-token-' + role, usr);
-        return true;
-      }
+    } catch (err) {
+      console.error('Demo login error:', err);
     }
     return false;
   };

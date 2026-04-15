@@ -11,7 +11,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
 
   // Full-screen pages without layout
-  if (pathname === '/login') {
+  if (pathname === '/login' || pathname === '/superadmin/login') {
     return <>{children}</>;
   }
 

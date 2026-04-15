@@ -60,12 +60,12 @@ export default function ComplaintFeed({ complaints }: { complaints: Complaint[] 
                     </span>
                     <span
                       className={`badge text-[10px] ${
-                        PRIORITY_COLORS[c.priority].bg
-                      } ${PRIORITY_COLORS[c.priority].text} ${
-                        PRIORITY_COLORS[c.priority].border
+                        (PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).bg
+                      } ${(PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).text} ${
+                        (PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).border
                       } border`}
                     >
-                      {c.priority}
+                      {c.priority || 'LOW'}
                     </span>
                   </div>
                   <p className="text-xs text-white/50 line-clamp-1 mb-1.5">

@@ -60,8 +60,8 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
-            Command Center
+          <h1 className="text-2xl font-bold text-white uppercase tracking-tight">
+            Central Oversight Dashboard
           </h1>
           <p className="text-sm text-white/40 mt-1">
             Real-time overview of Delhi NCR grievance intelligence
