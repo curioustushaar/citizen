@@ -52,7 +52,7 @@ async function fetchApi<T>(
 }
 
 // In-memory store for frontend-only mode
-let localComplaints = [...dummyComplaints];
+let localComplaints: any[] = [];
 
 export const api = {
   // ── Complaints ──────────────────────────────────────────
@@ -141,7 +141,7 @@ export const api = {
   getOfficers: async () => {
     const res = await fetchApi<any[]>('/officers');
     if (res.success && res.data) return res;
-    return { success: true, data: dummyOfficers };
+    return { success: true, data: [] };
   },
 
   // ── Analytics ───────────────────────────────────────────

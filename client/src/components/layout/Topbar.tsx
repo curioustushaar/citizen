@@ -76,15 +76,6 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-3">
-        {/* Simulate Crisis Button */}
-        <button
-          onClick={handleSimulateCrisis}
-          disabled={crisisLoading}
-          className="hidden md:flex items-center gap-2 px-4 py-2 bg-danger-500/10 border border-danger-500/30 text-danger-400 rounded-xl text-sm font-medium hover:bg-danger-500/20 hover:shadow-glow-danger transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <AlertTriangle className={`w-4 h-4 ${crisisLoading ? 'animate-spin' : 'animate-pulse'}`} />
-          {crisisLoading ? 'Simulating...' : 'Simulate Crisis'}
-        </button>
 
         {/* Notifications */}
         <button className="relative p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-colors">
@@ -98,15 +89,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
 
         {/* User / Login */}
         <div className="relative flex items-center gap-2 pl-3 border-l border-white/10">
-          {!user && (
-            <button
-              onClick={() => router.push('/login')}
-              className="flex items-center gap-2 px-3 py-2 bg-primary-500/10 border border-primary-500/30 text-primary-400 rounded-xl text-sm font-medium hover:bg-primary-500/20 transition-all"
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="hidden md:inline">Login</span>
-            </button>
-          )}
+          
         </div>
       </div>
     </header>

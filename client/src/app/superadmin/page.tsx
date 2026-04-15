@@ -38,6 +38,32 @@ export default function SuperAdminPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
+  const [viewingDept, setViewingDept] = useState<string | null>(null);
+
+  const exportToCSV = (deptName: string) => {
+    const deptComplaints = complaints.filter((c) => c.department === deptName);
+    if (deptComplaints.length === 0) {
+      toast.error('No complaints to export');
+      return;
+    }
+    const headers = ['Complaint ID', 'Description', 'Category', 'Location', 'Priority', 'Status', 'Date'];
+    const rows = deptComplaints.map((c) => [
+      c.complaintId || c._id,
+      `"${String(c.description || '').replace(/"/g, '""')}"`,
+      c.category,
+      c.location?.area || 'Unknown',
+      c.priority,
+      c.status,
+      new Date(c.createdAt).toLocaleDateString(),
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', `${deptName}_complaints.csv`);
+    a.click();
+  };
 
   const validateUser = () => {
     const newErrors: Record<string, string> = {};
@@ -339,11 +365,46 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
                 </div>
+                <div className="mt-4">
+                  <button onClick={() => setViewingDept(d.name)} className="w-full py-2 bg-primary-500/10 border border-primary-500/20 text-primary-400 rounded-lg text-xs font-semibold hover:bg-primary-500/20 transition-all text-center">
+                    View Records & Export
+                  </button>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Dept Records Modal */}
+      {viewingDept && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
+            className="glass-card w-full max-w-5xl p-4 sm:p-6 my-auto shadow-2xl border-white/10 flex flex-col max-h-[85vh]">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-white/5 pb-4">
+               <div>
+                  <h2 className="text-xl font-bold text-white uppercase flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-primary-400" /> 
+                    {viewingDept} Records
+                  </h2>
+                  <p className="text-xs text-white/40 mt-1">Detailed view of all complaint activities within this jurisdiction.</p>
+               </div>
+               <div className="flex items-center gap-3 w-full sm:w-auto">
+                 <button onClick={() => exportToCSV(viewingDept)} className="btn-primary flex-1 sm:flex-none text-sm px-4 shadow-xl shadow-primary-500/20">
+                   Export CSV
+                 </button>
+                 <button onClick={() => setViewingDept(null)} className="px-4 py-2 border border-white/10 text-white/60 hover:text-white rounded-xl text-sm transition-colors flex-1 sm:flex-none">
+                   Close
+                 </button>
+               </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+               <ComplaintTable complaints={complaints.filter(c => c.department === viewingDept)} />
+            </div>
+          </motion.div>
+        </div>
+      )}
+
 
       {showAddDept && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-md overflow-y-auto">
