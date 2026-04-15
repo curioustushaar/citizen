@@ -134,14 +134,14 @@ router.post(
           type: 'Point',
           coordinates: [lng ? parseFloat(lng) : 77.209, lat ? parseFloat(lat) : 28.6139],
           area: location,
-          district: 'Delhi'
+          district: 'Delhi',
         },
         status: 'pending',
       });
 
       // Emit real-time updates
       emitEvent('complaint_created', complaint);
-      emitEvent('stats_updated', null); // Trigger dashboard refresh
+      emitEvent('stats_updated', null);
 
       res.status(201).json({ success: true, data: complaint });
     } catch (err: any) {
@@ -194,14 +194,10 @@ router.patch('/:id/feedback', async (req: Request, res: Response) => {
     if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
 
     complaint.status = satisfied === false ? 'Escalated' : 'Resolved';
-    complaint.timeline.push({
-      step: complaint.status,
-      time: new Date()
-    });
+    complaint.timeline.push({ step: complaint.status, time: new Date() });
 
     await complaint.save();
 
-    // Emit real-time updates
     emitEvent('complaint_updated', complaint);
     if (complaint.status === 'Escalated') {
       emitEvent('complaint_escalated', complaint);
@@ -223,23 +219,16 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
 
     if (status) {
       complaint.status = status;
-      complaint.timeline.push({
-        step: status,
-        time: new Date()
-      });
+      complaint.timeline.push({ step: status, time: new Date() });
     }
 
     if (assignedOfficer) {
       complaint.assignedOfficer = assignedOfficer;
-      complaint.timeline.push({
-        step: 'Assigned',
-        time: new Date()
-      });
+      complaint.timeline.push({ step: 'Assigned', time: new Date() });
     }
 
     await complaint.save();
 
-    // Emit real-time updates
     emitEvent('complaint_updated', complaint);
     emitEvent('stats_updated', null);
 
@@ -251,7 +240,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
           title: 'Officer Assigned',
           message: `Your grievance has been assigned to: ${assignedOfficer}`,
           type: 'ASSIGNMENT',
-          relatedId: complaint._id.toString()
+          relatedId: complaint._id.toString(),
         });
       } else if (status) {
         await Notification.create({
@@ -259,7 +248,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
           title: 'Status Updated',
           message: `Your grievance status is now: ${status}`,
           type: 'STATUS_UPDATE',
-          relatedId: complaint._id.toString()
+          relatedId: complaint._id.toString(),
         });
       }
     }

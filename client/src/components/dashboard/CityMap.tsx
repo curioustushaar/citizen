@@ -22,13 +22,17 @@ interface Complaint {
 }
 
 const markerColors: Record<string, string> = {
-  HIGH: '#ef4444',
+  HIGH: '#f43f5e',
   MEDIUM: '#f59e0b',
-  LOW: '#22c55e',
+  LOW: '#10b981',
 };
 
 export default function CityMap({ complaints }: { complaints: Complaint[] }) {
-  const markers = useMemo(() => complaints || [], [complaints]);
+  const markers = useMemo(() => {
+    return (complaints || []).filter(
+      (c) => c && c.location && typeof c.location.lat === 'number' && typeof c.location.lng === 'number'
+    );
+  }, [complaints]);
 
   return (
     <div className="glass-card overflow-hidden h-full min-h-[400px]">
@@ -88,7 +92,7 @@ export default function CityMap({ complaints }: { complaints: Complaint[] }) {
                   <div className="text-sm min-w-[200px] p-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-lg">{CATEGORY_ICONS[c.category] || '📋'}</span>
-                      <span className="font-semibold">{c.category}</span>
+                      <span className="font-semibold text-white">{c.category}</span>
                     </div>
                     <p className="text-white/70 text-xs mb-2 line-clamp-2">{c.description}</p>
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
@@ -97,8 +101,8 @@ export default function CityMap({ complaints }: { complaints: Complaint[] }) {
                       </span>
                       <span
                         className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-                          PRIORITY_COLORS[c.priority]?.bg || 'bg-white/5'
-                        } ${PRIORITY_COLORS[c.priority]?.text || 'text-white/40'}`}
+                          (PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).bg
+                        } ${(PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).text}`}
                       >
                         {c.priority}
                       </span>

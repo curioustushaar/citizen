@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -41,7 +41,7 @@ export default function SuperAdminPage() {
       if (deptRes.success) setDeptData(deptRes.data as any[]);
       if (escRes.success) setEscData(escRes.data);
 
-      // These require auth — will fail gracefully in frontend-only mode
+      // These require auth ΓÇö will fail gracefully in frontend-only mode
       try {
         const [usrRes, slaRes, audRes] = await Promise.all([
           api.getUsers(),
@@ -75,7 +75,7 @@ export default function SuperAdminPage() {
             <Shield className="w-6 h-6 text-accent-400" />
             <h1 className="text-2xl font-bold text-white">Super Admin Control Room</h1>
           </div>
-          <p className="text-sm text-white/40">Full system visibility — {user?.region || 'Delhi NCR'}</p>
+          <p className="text-sm text-white/40">Full system visibility ΓÇö {user?.region || 'Delhi NCR'}</p>
         </div>
       </div>
 

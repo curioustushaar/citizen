@@ -3,16 +3,31 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Sparkles } from 'lucide-react';
-import { AI_INSIGHTS } from '@/lib/constants';
 
-const insightTypeStyles = {
-  warning: 'border-warning-500/20 bg-warning-500/5',
-  danger: 'border-danger-500/20 bg-danger-500/5',
-  success: 'border-success-500/20 bg-success-500/5',
-  info: 'border-primary-500/20 bg-primary-500/5',
+const insightTypeStyles: Record<string, { border: string; bg: string; glow: string }> = {
+  warning: {
+    border: 'rgba(245, 158, 11, 0.15)',
+    bg: 'rgba(245, 158, 11, 0.04)',
+    glow: 'rgba(245, 158, 11, 0.06)',
+  },
+  danger: {
+    border: 'rgba(244, 63, 94, 0.15)',
+    bg: 'rgba(244, 63, 94, 0.04)',
+    glow: 'rgba(244, 63, 94, 0.06)',
+  },
+  success: {
+    border: 'rgba(16, 185, 129, 0.15)',
+    bg: 'rgba(16, 185, 129, 0.04)',
+    glow: 'rgba(16, 185, 129, 0.06)',
+  },
+  info: {
+    border: 'rgba(6, 182, 212, 0.15)',
+    bg: 'rgba(6, 182, 212, 0.04)',
+    glow: 'rgba(6, 182, 212, 0.06)',
+  },
 };
 
-function TypingText({ text, speed = 30 }: { text: string; speed?: number }) {
+function TypingText({ text, speed = 20 }: { text: string; speed?: number }) {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
 
@@ -40,13 +55,12 @@ function TypingText({ text, speed = 30 }: { text: string; speed?: number }) {
   );
 }
 
-export default function AIInsightsPanel({ complaints, stats }: { complaints: any[], stats: any }) {
+export default function AIInsightsPanel({ complaints, stats }: { complaints: any[]; stats: any }) {
   const [visibleInsights, setVisibleInsights] = useState<any[]>([]);
 
   useEffect(() => {
     if (!complaints || complaints.length === 0) return;
 
-    // Generate dynamic insights
     const dynamicInsights: any[] = [];
 
     // Insight 1: Highest category
@@ -59,7 +73,7 @@ export default function AIInsightsPanel({ complaints, stats }: { complaints: any
       dynamicInsights.push({
         text: `${topCategory[0]} is currently the most reported category with ${topCategory[1]} active cases.`,
         type: 'info',
-        icon: '📊'
+        icon: '📊',
       });
     }
 
@@ -68,7 +82,7 @@ export default function AIInsightsPanel({ complaints, stats }: { complaints: any
       dynamicInsights.push({
         text: `Urgent: ${stats.escalated} complaints have been escalated. Dispatching priority alerts to department heads.`,
         type: 'danger',
-        icon: '🚨'
+        icon: '🚨',
       });
     }
 
@@ -83,33 +97,32 @@ export default function AIInsightsPanel({ complaints, stats }: { complaints: any
       dynamicInsights.push({
         text: `Localized pattern detected in ${topArea[0]}. Recommending field inspection for root cause analysis.`,
         type: 'warning',
-        icon: '📍'
+        icon: '📍',
       });
     }
 
     // Insight 4: Resolution efficiency
-    if (stats?.resolved > 0) {
+    if (stats?.resolved > 0 && stats?.total > 0) {
       const resRate = Math.round((stats.resolved / stats.total) * 100);
       dynamicInsights.push({
         text: `System Efficiency: ${resRate}% of grievances have been successfully resolved this month.`,
         type: 'success',
-        icon: '⚡'
+        icon: '⚡',
       });
     }
 
     // Insight 5: Predictive
     dynamicInsights.push({
-      text: "AI Prediction: Traffic-related issues are expected to rise by 15% due to upcoming public events.",
+      text: 'AI Prediction: Traffic-related issues are expected to rise by 15% due to upcoming public events.',
       type: 'info',
-      icon: '🔮'
+      icon: '🔮',
     });
 
-    // Sequentially reveal
     setVisibleInsights([]);
     const timers: NodeJS.Timeout[] = [];
     dynamicInsights.forEach((insight, i) => {
       const timer = setTimeout(() => {
-        setVisibleInsights((prev) => [...prev, insight]);
+        setVisibleInsights(prev => [...prev, insight]);
       }, i * 1500);
       timers.push(timer);
     });
@@ -118,8 +131,11 @@ export default function AIInsightsPanel({ complaints, stats }: { complaints: any
 
   return (
     <div className="glass-card h-full flex flex-col">
-      <div className="px-5 py-3 border-b border-white/5 flex items-center gap-2">
-        <div className="p-1.5 rounded-lg bg-accent-500/10">
+      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center gap-2">
+        <div
+          className="p-1.5 rounded-lg"
+          style={{ background: 'rgba(139, 92, 246, 0.1)' }}
+        >
           <Brain className="w-4 h-4 text-accent-400" />
         </div>
         <div>
@@ -130,24 +146,29 @@ export default function AIInsightsPanel({ complaints, stats }: { complaints: any
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-        {visibleInsights.map((insight, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className={`p-3 rounded-xl border ${
-              insightTypeStyles[insight.type as keyof typeof insightTypeStyles]
-            } transition-all duration-200`}
-          >
-            <div className="flex items-start gap-2.5">
-              <span className="text-base flex-shrink-0">{insight.icon}</span>
-              <p className="text-xs text-white/70 leading-relaxed">
-                <TypingText text={insight.text} speed={15} />
-              </p>
-            </div>
-          </motion.div>
-        ))}
+        {visibleInsights.map((insight, i) => {
+          const style = insightTypeStyles[insight.type] || insightTypeStyles.info;
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="p-3 rounded-xl transition-all duration-200"
+              style={{
+                border: `1px solid ${style.border}`,
+                background: style.bg,
+              }}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="text-base flex-shrink-0">{insight.icon}</span>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  <TypingText text={insight.text} speed={15} />
+                </p>
+              </div>
+            </motion.div>
+          );
+        })}
 
         {visibleInsights.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full py-8 text-white/20">

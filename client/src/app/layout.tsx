@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import MainLayout from '@/components/layout/MainLayout';
 import { AuthProvider } from '@/lib/auth';
+import { ThemeProvider } from 'next-themes';
 
 export const metadata: Metadata = {
   title: 'AI Grievance Intelligence System',
@@ -16,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <AuthProvider>
-          <MainLayout>{children}</MainLayout>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <AuthProvider>
+            <MainLayout>{children}</MainLayout>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

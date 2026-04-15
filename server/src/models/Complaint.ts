@@ -6,18 +6,32 @@ export interface ITimelineStep {
 }
 
 export interface IComplaint extends Document {
+  complaintId: string;
   description: string;
   category: string;
   status: string;
   priority: string;
   department: string;
   slaDeadline: Date;
+  resolvedAt: Date | null;
+  notes: {
+    text: string;
+    addedBy: string;
+    addedAt: Date;
+    attachment: string | null;
+  }[];
   tags: string[];
   imageUrls: string[];
   voiceNoteUrl: string;
   userId: string;
   userName: string;
   assignedOfficer: string;
+  assignedOfficerName: string;
+  feedback: {
+    satisfied: boolean;
+    comment: string;
+    submittedAt: Date;
+  };
   timeline: ITimelineStep[];
   location: {
     type: string;
@@ -31,18 +45,34 @@ export interface IComplaint extends Document {
 
 const ComplaintSchema = new Schema<IComplaint>(
   {
+    complaintId: { type: String, unique: true },
     description: { type: String, required: true },
     category:    { type: String, required: true },
     status:      { type: String, default: 'pending' },
     priority:    { type: String, default: 'MEDIUM' },
     department:  { type: String, default: 'General Administration' },
     slaDeadline: { type: Date },
+    resolvedAt:  { type: Date, default: null },
+    notes: [
+      {
+        text: { type: String, required: true },
+        addedBy: { type: String, required: true },
+        addedAt: { type: Date, default: Date.now },
+        attachment: { type: String, default: null }
+      }
+    ],
     tags:        { type: [String], default: [] },
     imageUrls:   { type: [String], default: [] },
     voiceNoteUrl:{ type: String, default: '' },
     userId:      { type: String, default: '' },
     userName:    { type: String, default: 'Anonymous' },
     assignedOfficer: { type: String, default: 'Unassigned' },
+    assignedOfficerName: { type: String, default: '' },
+    feedback: {
+      satisfied: { type: Boolean },
+      comment: { type: String },
+      submittedAt: { type: Date }
+    },
     timeline: [
       {
         step: { type: String, required: true },

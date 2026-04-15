@@ -11,6 +11,7 @@ import officerRoutes from './routes/officers';
 import userRoutes from './routes/users';
 import slaRoutes from './routes/sla';
 import auditRoutes from './routes/audit';
+import departmentRoutes from './routes/departments';
 import simulateRoutes from './routes/simulate';
 import notificationRoutes from './routes/notifications';
 import { initSocket } from './socket';
@@ -40,6 +41,7 @@ app.use('/api/officers', officerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/sla', slaRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/departments', departmentRoutes);
 app.use('/api/simulate', simulateRoutes);
 app.use('/api/notifications', notificationRoutes);
 
@@ -52,5 +54,6 @@ app.get('/api/health', (_req, res) => {
 connectDB().then(() => {
   httpServer.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📋 Routes: auth, complaints, officers, analytics, simulate, users, sla, audit-logs, notifications`);
   });
 });

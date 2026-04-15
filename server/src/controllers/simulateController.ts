@@ -33,7 +33,7 @@ export const simulateCrisis = async (_req: Request, res: Response) => {
     const complaints = [];
 
     for (const template of selected) {
-      const category = detectCategory(template.desc);
+      const { category } = detectCategory(template.desc);
       const priority = detectPriority(template.desc);
       const department = getDepartment(category);
       const slaDeadline = calculateSLA(category, priority);

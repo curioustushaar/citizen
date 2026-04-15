@@ -4,8 +4,16 @@ export interface IOfficer extends Document {
   name: string;
   department: string;
   designation: string;
+  rank: string;
+  level: number;
+  region: string;
   email: string;
   phone: string;
+  employeeId: string;
+  officeAddress: string;
+  district: string;
+  state: string;
+  pincode: string;
   pendingCount: number;
   escalatedCount: number;
   resolvedCount: number;
@@ -18,8 +26,16 @@ const OfficerSchema = new Schema<IOfficer>(
     name: { type: String, required: true },
     department: { type: String, required: true },
     designation: { type: String, required: true },
+    rank: { type: String, default: 'Officer' },
+    level: { type: Number, default: 1 },
+    region: { type: String, default: 'Delhi-NCR' },
     email: { type: String, required: true },
     phone: { type: String, required: true },
+    employeeId: { type: String, default: '' },
+    officeAddress: { type: String, default: '' },
+    district: { type: String, default: '' },
+    state: { type: String, default: '' },
+    pincode: { type: String, default: '' },
     pendingCount: { type: Number, default: 0 },
     escalatedCount: { type: Number, default: 0 },
     resolvedCount: { type: Number, default: 0 },

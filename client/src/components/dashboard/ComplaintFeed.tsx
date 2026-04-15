@@ -34,14 +34,21 @@ export default function ComplaintFeed({ complaints }: { complaints: Complaint[] 
 
   return (
     <div className="glass-card h-full flex flex-col">
-      <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+      <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-white">Live Complaint Feed</h3>
-          <p className="text-xs text-white/40">{complaints?.length || 0} recent complaints</p>
+          <p className="text-xs text-white/35">{complaints?.length || 0} recent complaints</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-success-400 animate-pulse" />
-          <span className="text-[10px] text-white/50">Live</span>
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{
+              background: '#34d399',
+              boxShadow: '0 0 8px rgba(52, 211, 153, 0.5)',
+              animation: 'pulseRing 2s ease-in-out infinite',
+            }}
+          />
+          <span className="text-[10px] text-white/45">Live</span>
         </div>
       </div>
 
@@ -54,7 +61,19 @@ export default function ComplaintFeed({ complaints }: { complaints: Complaint[] 
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ delay: i * 0.05 }}
-              className="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all duration-200 cursor-pointer group"
+              className="p-3 rounded-xl transition-all duration-200 cursor-pointer group"
+              style={{
+                background: 'rgba(255, 255, 255, 0.015)',
+                border: '1px solid rgba(255, 255, 255, 0.04)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.12)';
+                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.03)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.04)';
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.015)';
+              }}
             >
               <div className="flex items-start gap-3">
                 <div className="text-lg flex-shrink-0 mt-0.5">
@@ -67,18 +86,18 @@ export default function ComplaintFeed({ complaints }: { complaints: Complaint[] 
                     </span>
                     <span
                       className={`badge text-[10px] ${
-                        PRIORITY_COLORS[c.priority]?.bg || 'bg-white/5'
-                      } ${PRIORITY_COLORS[c.priority]?.text || 'text-white/40'} ${
-                        PRIORITY_COLORS[c.priority]?.border || 'border-white/10'
+                        (PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).bg
+                      } ${(PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).text} ${
+                        (PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.LOW).border
                       } border`}
                     >
-                      {c.priority}
+                      {c.priority || 'LOW'}
                     </span>
                   </div>
-                  <p className="text-xs text-white/50 line-clamp-1 mb-1.5">
+                  <p className="text-xs text-white/45 line-clamp-1 mb-1.5">
                     {c.description}
                   </p>
-                  <div className="flex items-center gap-3 text-[10px] text-white/30">
+                  <div className="flex items-center gap-3 text-[10px] text-white/25">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> 
                       {typeof c.location === 'object' ? (c.location.area || 'Unknown') : (c.location || 'Unknown')}

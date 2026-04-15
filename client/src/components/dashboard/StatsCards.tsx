@@ -39,41 +39,41 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
       label: 'Total Complaints',
       value: data?.total || 0,
       icon: TrendingUp,
-      color: 'from-primary-500 to-primary-600',
-      textColor: 'text-primary-400',
-      bgColor: 'bg-primary-500/10',
-      borderColor: 'border-primary-500/20',
-      shadowColor: 'shadow-primary-500/5',
+      gradient: 'from-cyan-500 to-blue-600',
+      glowColor: 'rgba(6, 182, 212, 0.15)',
+      iconBg: 'rgba(6, 182, 212, 0.1)',
+      iconColor: '#22d3ee',
+      barColor: 'rgba(6, 182, 212, 0.3)',
     },
     {
       label: 'Pending',
       value: data?.pending || 0,
       icon: Clock,
-      color: 'from-warning-500 to-warning-600',
-      textColor: 'text-warning-400',
-      bgColor: 'bg-warning-500/10',
-      borderColor: 'border-warning-500/20',
-      shadowColor: 'shadow-warning-500/5',
+      gradient: 'from-amber-500 to-orange-600',
+      glowColor: 'rgba(245, 158, 11, 0.12)',
+      iconBg: 'rgba(245, 158, 11, 0.1)',
+      iconColor: '#fbbf24',
+      barColor: 'rgba(245, 158, 11, 0.3)',
     },
     {
       label: 'Resolved',
       value: data?.resolved || 0,
       icon: CheckCircle,
-      color: 'from-success-500 to-success-600',
-      textColor: 'text-success-400',
-      bgColor: 'bg-success-500/10',
-      borderColor: 'border-success-500/20',
-      shadowColor: 'shadow-success-500/5',
+      gradient: 'from-emerald-500 to-teal-600',
+      glowColor: 'rgba(16, 185, 129, 0.12)',
+      iconBg: 'rgba(16, 185, 129, 0.1)',
+      iconColor: '#34d399',
+      barColor: 'rgba(16, 185, 129, 0.3)',
     },
     {
       label: 'Escalated',
       value: data?.escalated || 0,
       icon: AlertTriangle,
-      color: 'from-danger-500 to-danger-600',
-      textColor: 'text-danger-400',
-      bgColor: 'bg-danger-500/10',
-      borderColor: 'border-danger-500/20',
-      shadowColor: 'shadow-danger-500/5',
+      gradient: 'from-rose-500 to-pink-600',
+      glowColor: 'rgba(244, 63, 94, 0.12)',
+      iconBg: 'rgba(244, 63, 94, 0.1)',
+      iconColor: '#fb7185',
+      barColor: 'rgba(244, 63, 94, 0.3)',
     },
   ];
 
@@ -87,18 +87,51 @@ export default function StatsCards({ data }: { data: StatsData | null }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1, duration: 0.5 }}
-            className={`stat-card ${stat.borderColor} border ${stat.shadowColor} hover:shadow-lg hover:border-opacity-40 cursor-default p-5 rounded-2xl bg-white/5`}
-            style={{ '--accent-color': stat.color } as React.CSSProperties}
+            className="stat-card cursor-default group relative overflow-hidden border border-white/[0.06]"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = `${stat.iconColor}25`;
+              e.currentTarget.style.boxShadow = `0 8px 32px rgba(0,0,0,0.3), 0 0 20px ${stat.glowColor}`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '';
+              e.currentTarget.style.boxShadow = '';
+            }}
           >
             <div className="flex items-start justify-between mb-4">
-              <div className={`p-2.5 rounded-xl ${stat.bgColor}`}>
-                <Icon className={`w-5 h-5 ${stat.textColor}`} />
+              <div
+                className="p-2.5 rounded-xl"
+                style={{ background: stat.iconBg }}
+              >
+                <Icon className="w-5 h-5" style={{ color: stat.iconColor }} />
               </div>
             </div>
             <h3 className="text-3xl font-bold text-white mb-1">
               <AnimatedCounter value={stat.value} />
             </h3>
-            <p className="text-sm text-white/50">{stat.label}</p>
+            <p className="text-sm text-white/45">{stat.label}</p>
+
+            {/* Sparkline bars */}
+            <div className="mt-3 flex items-end gap-px h-8">
+              {[65, 45, 78, 52, 88, 35, 72, 58, 42, 90, 62, 48].map((h, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-sm transition-all duration-500"
+                  style={{
+                    height: `${(h + index * 7) % 80 + 20}%`,
+                    background: stat.barColor,
+                    opacity: 0.5 + (i / 24),
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Subtle corner glow on hover */}
+            <div
+              className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{
+                background: `radial-gradient(circle, ${stat.glowColor} 0%, transparent 70%)`,
+              }}
+            />
           </motion.div>
         );
       })}

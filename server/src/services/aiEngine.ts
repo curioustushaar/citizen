@@ -43,7 +43,7 @@ const CATEGORY_RULES: { keywords: string[]; category: string }[] = [
   },
 ];
 
-export function detectCategory(description: string): string {
+export function detectCategory(description: string): { category: string; confidence: number } {
   const lower = description.toLowerCase();
   let bestMatch = { category: 'General', score: 0 };
 
@@ -53,7 +53,9 @@ export function detectCategory(description: string): string {
       bestMatch = { category: rule.category, score };
     }
   }
-  return bestMatch.category;
+  // Simplified confidence: ratio of matches to total words (max 1.0)
+  const confidence = Math.min(bestMatch.score / 3, 1.0) || 0.5;
+  return { category: bestMatch.category, confidence };
 }
 
 // ── Priority Detection ──────────────────────────────────────────────────
@@ -145,4 +147,13 @@ export function generateTags(description: string, category: string): string[] {
   if (!tags.includes(catTag)) tags.push(catTag);
 
   return [...new Set(tags)].slice(0, 6); // max 6 tags, deduplicated
+}
+
+export function generateComplaintId(): string {
+  const date = new Date();
+  const year = date.getFullYear().toString().slice(-2);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return `GRV${year}${month}${day}${random}`;
 }

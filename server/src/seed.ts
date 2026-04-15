@@ -7,6 +7,7 @@ import Officer from './models/Officer';
 import User from './models/User';
 import SLAConfig from './models/SLAConfig';
 import AuditLog from './models/AuditLog';
+import Department from './models/Department';
 import {
   detectCategory,
   detectPriority,
@@ -16,6 +17,48 @@ import {
 } from './services/aiEngine';
 
 dotenv.config();
+
+const departments = [
+  {
+    name: 'Delhi Police',
+    icon: '🚓',
+    categories: ['Public Safety', 'Crime', 'Harassment'],
+    hierarchy: [
+      { name: 'Constable', level: 1 },
+      { name: 'Head Constable', level: 2 },
+      { name: 'Sub Inspector', level: 3 },
+      { name: 'Inspector / SHO', level: 4 },
+      { name: 'DSP / ACP', level: 5 },
+      { name: 'SP / DCP', level: 6 },
+      { name: 'IG', level: 7 },
+      { name: 'Commissioner', level: 8 },
+    ],
+  },
+  {
+    name: 'Municipal Corporation (MCD)',
+    icon: '🏙️',
+    categories: ['Sanitation', 'Road & Infrastructure'],
+    hierarchy: [
+      { name: 'Ward Worker', level: 1 },
+      { name: 'Junior Engineer (JE)', level: 2 },
+      { name: 'Assistant Engineer (AE)', level: 3 },
+      { name: 'Executive Engineer', level: 4 },
+      { name: 'Municipal Commissioner', level: 5 },
+    ],
+  },
+  {
+    name: 'Electricity Department',
+    icon: '⚡',
+    categories: ['Electricity'],
+    hierarchy: [
+      { name: 'Lineman', level: 1 },
+      { name: 'Junior Engineer', level: 2 },
+      { name: 'Assistant Engineer', level: 3 },
+      { name: 'Executive Engineer', level: 4 },
+      { name: 'Chief Engineer', level: 5 },
+    ],
+  },
+];
 
 const officers = [
   { name: 'Rajesh Kumar', department: 'Delhi Traffic Police', designation: 'Inspector', email: 'rajesh.kumar@dtp.gov.in', phone: '+91 98111 00001', performance: 88 },
@@ -67,8 +110,13 @@ async function seed() {
     User.deleteMany({}),
     SLAConfig.deleteMany({}),
     AuditLog.deleteMany({}),
+    Department.deleteMany({}),
   ]);
   console.log('🗑️  Cleared all collections');
+
+  // Seed Departments
+  const createdDepartments = await Department.insertMany(departments);
+  console.log(`🏢 Seeded ${createdDepartments.length} departments`);
 
   // Seed Officers
   const createdOfficers = await Officer.insertMany(
@@ -103,7 +151,7 @@ async function seed() {
   // Seed Complaints (with new GeoJSON + timeline schema)
   const publicUsers = createdUsers.filter((u) => u.role === 'PUBLIC');
   const complaints = complaintDescriptions.map((c, i) => {
-    const category = detectCategory(c.desc);
+    const { category, confidence: aiConfidence } = detectCategory(c.desc);
     const priority = detectPriority(c.desc);
     const department = getDepartment(category);
     const slaDeadline = calculateSLA(category, priority);
@@ -140,7 +188,7 @@ async function seed() {
       timeline,
       location: {
         type: 'Point',
-        coordinates: [c.lng, c.lat], // GeoJSON: [lng, lat]
+        coordinates: [c.lng, c.lat],
         area: c.area,
         district: c.district,
       },

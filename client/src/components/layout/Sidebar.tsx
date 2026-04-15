@@ -77,9 +77,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navItems = getNavItems();
 
   const roleColors: Record<string, string> = {
-    PUBLIC: 'from-success-500 to-success-600',
-    ADMIN: 'from-primary-500 to-primary-600',
-    SUPER_ADMIN: 'from-accent-500 to-accent-600',
+    PUBLIC: 'from-emerald-500 to-teal-600',
+    ADMIN: 'from-cyan-500 to-blue-600',
+    SUPER_ADMIN: 'from-violet-500 to-purple-600',
   };
 
   const roleLabels: Record<string, string> = {
@@ -94,7 +94,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       animate={{ width: collapsed ? 72 : 260 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
       className="fixed left-0 top-0 bottom-0 z-40 flex flex-col
-                 bg-surface-900/80 backdrop-blur-xl border-r border-white/5"
+                 bg-surface-900/80 backdrop-blur-xl border-r border-white/[0.06] premium-sidebar"
     >
       {/* Logo */}
       <div className="h-16 flex items-center gap-3 px-4 border-b border-white/5">
@@ -119,9 +119,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* User Info */}
       {user && (
-        <div className={`px-3 py-3 border-b border-white/5 ${collapsed ? 'flex justify-center' : ''}`}>
+        <div className={`px-3 py-3 border-b border-white/[0.06] ${collapsed ? 'flex justify-center' : ''}`}>
           {collapsed ? (
-            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center`}>
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center shadow-lg shadow-primary-500/10`}>
               <User className="w-4 h-4 text-white" />
             </div>
           ) : (
@@ -170,11 +170,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* Bottom Actions */}
-      <div className="px-2 py-3 border-t border-white/5 space-y-1">
+      <div className="px-2 py-3 border-t border-white/[0.06] space-y-1">
         {user ? (
           <button
             onClick={() => { logout(); router.push('/login'); }}
-            className={`nav-link w-full text-danger-400/60 hover:text-danger-400 ${collapsed ? 'justify-center px-0' : ''}`}
+            className={`nav-link w-full text-danger-400/60 hover:text-danger-400 hover:bg-danger-500/5 ${collapsed ? 'justify-center px-0' : ''}`}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             {!collapsed && <span className="text-sm">Logout</span>}
@@ -190,7 +190,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <button
           onClick={onToggle}
           suppressHydrationWarning
-          className="nav-link w-full justify-center"
+          className="nav-link w-full justify-center transition-transform hover:scale-105"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />

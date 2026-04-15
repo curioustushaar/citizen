@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, avatarsDir),
   filename: (req: any, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, `avatar-${req.user.userId}-${Date.now()}${ext}`);
+    cb(null, `avatar-${req.user?.userId || 'unknown'}-${Date.now()}${ext}`);
   },
 });
 
@@ -24,13 +24,11 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-router.use(verifyAuth);
+// Self-service routes (any logged-in user)
+router.get('/me', verifyAuth, getMe);
+router.patch('/profile', verifyAuth, updateProfile);
 
-// All regular users
-router.get('/me', getMe);
-router.patch('/profile', updateProfile);
-
-router.post('/avatar', upload.single('avatar'), async (req: any, res) => {
+router.post('/avatar', verifyAuth, upload.single('avatar'), async (req: any, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
@@ -40,12 +38,10 @@ router.post('/avatar', upload.single('avatar'), async (req: any, res) => {
   }
 });
 
-// Admin only
-router.use(requireRole('SUPER_ADMIN'));
-
-router.get('/', getUsers);
-router.post('/', createUser);
-router.patch('/:id', updateUser);
-router.delete('/:id', deleteUser);
+// Admin-only routes
+router.get('/', verifyAuth, requireRole('SUPER_ADMIN'), getUsers);
+router.post('/', verifyAuth, requireRole('SUPER_ADMIN'), createUser);
+router.patch('/:id', verifyAuth, requireRole('SUPER_ADMIN'), updateUser);
+router.delete('/:id', verifyAuth, requireRole('SUPER_ADMIN'), deleteUser);
 
 export default router;

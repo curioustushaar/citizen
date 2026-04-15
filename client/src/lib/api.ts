@@ -10,14 +10,32 @@ function getAuthHeaders(): Record<string, string> {
 async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit
-): Promise<{ success: boolean; data: T; message?: string }> {
+): Promise<{ success: boolean; data: T; message?: string; error?: string }> {
   try {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       headers: getAuthHeaders(),
       ...options,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+
+    const result = await res.json();
+
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('grievance_token');
+        localStorage.removeItem('grievance_user');
+        window.location.href = '/login';
+      }
+      return { success: false, data: null as T, message: 'Session expired. Please login again.' };
+    }
+
+    if (!res.ok) {
+      return {
+        success: false,
+        data: null as T,
+        message: result.error || result.message || `HTTP error ${res.status}`,
+      };
+    }
+    return result;
   } catch (err) {
     console.error('API Error:', err);
     return { success: false, data: null as T, message: 'Backend unavailable' };
@@ -64,7 +82,9 @@ export const api = {
 
   // ── Officers ────────────────────────────────────────────
   getOfficers: async () => {
-    return await fetchApi<any[]>('/officers');
+    const res = await fetchApi<any[]>('/officers');
+    if (res.success && res.data) return res;
+    return { success: true, data: [] };
   },
 
   // ── Analytics ───────────────────────────────────────────
@@ -88,6 +108,10 @@ export const api = {
     return await fetchApi<any[]>('/analytics/heatmap');
   },
 
+  getAIInsights: async () => {
+    return await fetchApi<any[]>('/analytics/insights');
+  },
+
   // ── Users (SUPER_ADMIN) ─────────────────────────────────
   getUsers: async () => {
     return await fetchApi<any[]>('/users');
@@ -99,6 +123,10 @@ export const api = {
 
   updateUser: async (id: string, data: any) => {
     return await fetchApi<any>(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  deleteUser: async (id: string) => {
+    return fetchApi<any>(`/users/${id}`, { method: 'DELETE' });
   },
 
   // ── User Profile (Self) ─────────────────────────────────
@@ -144,13 +172,31 @@ export const api = {
     const formData = new FormData();
     formData.append('avatar', file);
     const token = typeof window !== 'undefined' ? localStorage.getItem('grievance_token') : null;
-    
     const res = await fetch('/api/users/avatar', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
     });
     return await res.json();
+  },
+
+  // ── Departments (SUPER_ADMIN) ───────────────────────────
+  getDepartments: async () => {
+    const res = await fetchApi<any[]>('/departments');
+    if (res.success && res.data) return res;
+    return { success: true, data: [] };
+  },
+
+  createDepartment: async (data: any) => {
+    return fetchApi<any>('/departments', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  updateDepartment: async (id: string, data: any) => {
+    return fetchApi<any>(`/departments/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  deleteDepartment: async (id: string) => {
+    return fetchApi<any>(`/departments/${id}`, { method: 'DELETE' });
   },
 
   // ── Simulate Crisis ────────────────────────────────────

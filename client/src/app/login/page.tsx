@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,10 +13,10 @@ import { useAuth } from '@/lib/auth';
 type Mode = 'login' | 'register';
 
 const FEATURES = [
-  { icon: '🤖', text: 'AI-Powered complaint routing' },
-  { icon: '⚡', text: 'Real-time status tracking' },
-  { icon: '🏛️', text: 'Direct department escalation' },
-  { icon: '📊', text: 'Live city-wide analytics' },
+  { icon: '≡ƒñû', text: 'AI-Powered complaint routing' },
+  { icon: 'ΓÜí', text: 'Real-time status tracking' },
+  { icon: '≡ƒÅ¢∩╕Å', text: 'Direct department escalation' },
+  { icon: '≡ƒôè', text: 'Live city-wide analytics' },
 ];
 
 export default function LoginPage() {
@@ -98,7 +98,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex" style={{ background: 'hsl(222, 47%, 4%)' }}>
 
-      {/* ── Left Panel ────────────────────────────────────────── */}
+      {/* ΓöÇΓöÇ Left Panel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       <div className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 p-12 relative overflow-hidden"
         style={{ background: 'linear-gradient(145deg, hsl(222,47%,8%) 0%, hsl(230,50%,10%) 100%)' }}>
 
@@ -132,7 +132,7 @@ export default function LoginPage() {
           </h2>
 
           <p className="text-slate-400 text-base leading-relaxed mb-10">
-            File complaints, track real-time status, and get AI-powered routing to the right government department — all in one place.
+            File complaints, track real-time status, and get AI-powered routing to the right government department ΓÇö all in one place.
           </p>
 
           <div className="space-y-4">
@@ -164,7 +164,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Right Panel — Auth Forms ──────────────────────────── */}
+      {/* ΓöÇΓöÇ Right Panel ΓÇö Auth Forms ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
@@ -369,7 +369,7 @@ export default function LoginPage() {
           </p>
 
           <p className="text-center text-[10px] text-slate-700 mt-8">
-            AI Grievance Intelligence System • Delhi NCR Smart City Initiative
+            AI Grievance Intelligence System ΓÇó Delhi NCR Smart City Initiative
           </p>
         </div>
       </div>
