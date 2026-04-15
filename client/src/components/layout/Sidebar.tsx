@@ -45,7 +45,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         ...common,
         { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
         { label: 'Analytics', icon: BarChart3, href: '/analytics' },
-        { label: 'Login', icon: LogIn, href: '/login' },
       ];
     }
 
@@ -62,7 +61,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       return [
         ...common,
         { label: 'Officer Panel', icon: Building2, href: '/officer' },
-        { label: 'Submit Complaint', icon: PlusCircle, href: '/complaints/new' },
         { label: 'Analytics', icon: BarChart3, href: '/analytics' },
         { label: 'Admin Panel', icon: Shield, href: '/admin' },
       ];
