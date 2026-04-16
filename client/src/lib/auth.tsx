@@ -103,11 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.success) {
         const userRole = data.data.user.role as UserData['role'];
         if (requiredRole && userRole !== requiredRole) {
-          const superAdminAccessingAdmin = requiredRole === 'ADMIN' && userRole === 'SUPER_ADMIN';
-          if (!superAdminAccessingAdmin) {
-            localStorage.setItem('grievance_user_auth_error_role', userRole);
-            return false;
-          }
+          localStorage.setItem('grievance_user_auth_error_role', userRole);
+          return false;
         }
         saveSession(data.data.token, data.data.user);
         return true;
