@@ -337,7 +337,13 @@ export const getAdminComplaints = async (req: AuthRequest, res: Response) => {
     const scope = await buildDeptScope(req);
     if (!scope) return res.status(403).json({ success: false, error: 'Department scope not found' });
 
-    const query: any = { departmentId: { $in: scope.deptIds } };
+    // Build base query: match by departmentId OR by department name
+    const query: any = {
+      $or: [
+        { departmentId: { $in: scope.deptIds } },
+        { department: scope.dept.name },
+      ],
+    };
 
     if (typeof req.query.status === 'string' && req.query.status.trim()) {
       query.status = req.query.status.trim();
@@ -347,11 +353,14 @@ export const getAdminComplaints = async (req: AuthRequest, res: Response) => {
     }
     if (typeof req.query.search === 'string' && req.query.search.trim()) {
       const term = req.query.search.trim();
-      query.$or = [
-        { complaintId: { $regex: term, $options: 'i' } },
-        { description: { $regex: term, $options: 'i' } },
-        { category: { $regex: term, $options: 'i' } },
-      ];
+      query.$and = (query.$and || []);
+      query.$and.push({
+        $or: [
+          { complaintId: { $regex: term, $options: 'i' } },
+          { description: { $regex: term, $options: 'i' } },
+          { category: { $regex: term, $options: 'i' } },
+        ],
+      });
     }
 
     const complaints = await Complaint.find(query).sort({ createdAt: -1 });
