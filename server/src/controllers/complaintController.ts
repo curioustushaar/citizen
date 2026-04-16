@@ -107,6 +107,7 @@ export const createComplaint = async (req: Request, res: Response) => {
       category,
       priority,
       userName,
+      department: deptInfo.name,
       location: location?.area,
       description: description.substring(0, 100),
       timestamp: new Date(),

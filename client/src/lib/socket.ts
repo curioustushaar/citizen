@@ -8,12 +8,29 @@ let socket: Socket | undefined;
 export const getSocket = (token?: string | null) => {
   if (!socket) {
     socket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      autoConnect: false,
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      auth: token ? { token } : {},
+    });
+
+    // Log connection events
+    socket.on('connect', () => {
+      console.log('✅ Socket.io connected:', socket?.id);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Socket.io disconnected:', reason);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('⚠️ Socket.io connection error:', error);
     });
   }
 
-  if (token) {
+  if (token && socket.auth !== { token }) {
     socket.auth = { token };
   }
 

@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'grievance-system-secret-key-2024';
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 
 type SocketUser = {
   userId?: string;
@@ -16,9 +17,11 @@ let io: Server;
 export const initSocket = (server: HttpServer) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: [CLIENT_URL, 'http://localhost:3000', 'http://localhost:3001', 'http://10.79.145.124:3000'],
       methods: ['GET', 'POST', 'PATCH'],
+      credentials: true,
     },
+    transports: ['websocket', 'polling'],
   });
 
   io.use((socket, next) => {
