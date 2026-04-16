@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import express from 'express';
 import Complaint from '../models/Complaint';
 import Notification from '../models/Notification';
-import { detectCategory, detectPriority, getDepartment, calculateSLA, generateTags } from '../services/aiEngine';
+import { detectCategory, detectPriority, getDepartment, calculateSLA, generateTags, generateComplaintId } from '../services/aiEngine';
 import { emitEvent } from '../socket';
 
 const router = Router();
@@ -119,6 +119,7 @@ router.post(
       const userInfo = getUserFromToken(req);
 
       const complaint = await Complaint.create({
+        complaintId: generateComplaintId(),
         description,
         category,
         priority,
