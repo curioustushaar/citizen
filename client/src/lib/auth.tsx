@@ -28,7 +28,6 @@ interface AuthContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: TranslationKey) => string;
-  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   register: (data: any) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -55,7 +54,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
+      } else {
+        // AUTO-LOGIN AS DEFAULT CITIZEN FOR STANDALONE REPO
+        const mockUser: UserData = {
+          id: 'demo-citizen-123',
+          name: 'Demo Citizen',
+          email: 'citizen@example.com',
+          role: 'PUBLIC',
+          department: null,
+          region: 'Delhi NCR',
+          phone: '+91 9876543210'
+        };
+        setUser(mockUser);
+        setToken('demo-token-active-citizen');
       }
+      
       if (savedLang === 'en' || savedLang === 'hi') {
         setLanguageState(savedLang as Language);
       }
@@ -105,24 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ ok: boolean; error?: string }> => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        saveSession(data.data.token, data.data.user);
-        return { ok: true };
-      }
-      return { ok: false, error: data.error || 'Login failed' };
-    } catch (err) {
-      return { ok: false, error: 'Cannot connect to server. Is the backend running?' };
-    }
-  };
-
   const register = async (formData: any): Promise<{ ok: boolean; error?: string }> => {
     try {
       const res = await fetch('/api/auth/register', {
@@ -157,7 +152,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         language,
         setLanguage,
         t,
-        login,
         register,
         logout,
         refreshUser,

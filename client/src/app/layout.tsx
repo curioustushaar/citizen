@@ -9,17 +9,19 @@ export const metadata: Metadata = {
   description: 'Smart Sarkari Complaint Resolver — AI-powered smart city governance',
 };
 
+import UserLayout from '@/components/layout/UserLayout';
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <AuthProvider>
-            <MainLayout>{children}</MainLayout>
+            <UserLayout>{children}</UserLayout>
           </AuthProvider>
         </ThemeProvider>
       </body>

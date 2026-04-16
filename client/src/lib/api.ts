@@ -20,12 +20,7 @@ async function fetchApi<T>(
     const result = await res.json();
 
     if (res.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('grievance_token');
-        localStorage.removeItem('grievance_user');
-        window.location.href = '/login';
-      }
-      return { success: false, data: null as T, message: 'Session expired. Please login again.' };
+      return { success: false, data: null as T, message: 'Session expired or invalid.' };
     }
 
     if (!res.ok) {

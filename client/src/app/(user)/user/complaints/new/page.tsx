@@ -266,55 +266,55 @@ export default function NewComplaintPage() {
 
   if (submittedData) {
     return (
-      <div className="min-h-screen bg-[#080c14] text-slate-200 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-transparent text-slate-900 dark:text-slate-200 flex items-center justify-center p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           className="max-w-lg w-full text-center"
         >
-          <div className="w-24 h-24 bg-emerald-500/10 border-2 border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+          <div className="w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/20 border-2 border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10">
+            <CheckCircle2 className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h2 className="text-3xl font-black text-white mb-3">Complaint Registered!</h2>
-          <p className="text-slate-500 mb-8">AI has analyzed and routed your complaint to the appropriate department.</p>
+          <h2 className="text-3xl font-black dark:text-white text-slate-900 mb-3 tracking-tight">Complaint Registered!</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium">AI has analyzed and routed your complaint to the appropriate department.</p>
 
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 mb-8 text-left space-y-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Category</span>
-              <span className="text-white font-bold">{submittedData.category}</span>
+          <div className="glass-card rounded-[2.5rem] p-8 mb-8 text-left space-y-5 shadow-2xl border-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Category</span>
+              <span className="dark:text-white text-slate-900 font-black">{submittedData.category}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Priority</span>
-              <span className={`font-bold ${PRIORITY_CONFIG[submittedData.priority as 'HIGH'|'MEDIUM'|'LOW']?.color || 'text-white'}`}>
-                {submittedData.priority}
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Priority</span>
+              <span className={`font-black ${PRIORITY_CONFIG[submittedData.priority as 'HIGH'|'MEDIUM'|'LOW']?.color.replace('-400', '-600') || 'text-slate-900 dark:text-white'}`}>
+                {PRIORITY_CONFIG[submittedData.priority as 'HIGH'|'MEDIUM'|'LOW']?.icon} {submittedData.priority}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Department</span>
-              <span className="text-white font-bold">{submittedData.department}</span>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Department</span>
+              <span className="dark:text-white text-slate-900 font-black">{submittedData.department}</span>
             </div>
             {submittedData.tags?.length > 0 && (
-              <div className="pt-2 border-t border-white/5">
-                <p className="text-slate-500 text-xs mb-2">AI-Generated Tags</p>
+              <div className="pt-5 border-t dark:border-white/5 border-slate-100">
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-3">AI-Generated Tags</p>
                 <div className="flex flex-wrap gap-2">
                   {submittedData.tags.map((t: string) => (
-                    <span key={t} className="px-2 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs rounded-lg">#{t}</span>
+                    <span key={t} className="px-3 py-1.5 bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm">#{t}</span>
                   ))}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
-              onClick={() => router.push('/my-complaints')}
-              className="flex-1 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2"
+              onClick={() => router.push('/user/complaints')}
+              className="flex-1 py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary-500/20 active:scale-95"
             >
-              Track Status <ArrowRight className="w-4 h-4" />
+              Track Status <ArrowRight className="w-5 h-5" />
             </button>
             <button
               onClick={() => { setSubmittedData(null); setDescription(''); setCategory(''); setLocation(''); setImages([]); setImagePreviews([]); setVoiceBlob(null); }}
-              className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl border border-white/10 transition-all"
+              className="flex-1 py-4 bg-white/50 dark:bg-white/5 hover:bg-white dark:hover:bg-white/10 dark:text-white text-slate-900 font-black rounded-2xl border dark:border-white/10 border-slate-200 transition-all shadow-lg active:scale-95"
             >
               File Another
             </button>
@@ -325,53 +325,52 @@ export default function NewComplaintPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-slate-200 py-8 px-4">
+    <div className="min-h-screen bg-transparent text-slate-900 dark:text-slate-200 py-8 px-4">
       <div className="max-w-3xl mx-auto">
 
         {/* Header */}
-        <div className="mb-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-2xl">
-              <PlusCircle className="w-6 h-6 text-blue-400" />
+        <div className="mb-10 flex flex-col items-center text-center">
+            <div className="p-4 bg-primary-500/10 border-2 border-primary-500/20 rounded-[2rem] shadow-xl shadow-primary-500/5 mb-6">
+              <PlusCircle className="w-10 h-10 text-primary-600 dark:text-primary-400" />
             </div>
-            <h1 className="text-3xl font-black text-white">{t('fileGrievance')}</h1>
-          </div>
-          <p className="text-slate-500 ml-14">
-            Our AI analyzes your complaint in real-time and routes it to the right department.
+            <h1 className="text-4xl font-black dark:text-white text-slate-900 tracking-tight mb-3">{t('fileGrievance')}</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium max-w-md">
+            Our AI analyzes your complaint in real-time and routes it to the right department for faster resolution.
           </p>
         </div>
 
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm flex items-center gap-3"
+            className="mb-8 p-5 rounded-[2rem] bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-bold flex items-center gap-3 shadow-lg"
           >
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
             {error}
           </motion.div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* ── Description ─────────────────────────────────────────── */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-4 uppercase tracking-widest">
-              <AlignLeft className="w-3.5 h-3.5" />
+          <div className="glass-card rounded-[2.5rem] p-8 shadow-xl border-2 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
+            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 mb-6 uppercase tracking-widest relative z-10">
+              <AlignLeft className="w-4 h-4 text-primary-500" />
               {t('describeIssue')} *
             </label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="What seems to be the problem? Be specific — e.g. 'Broken water pipeline leaking in Sector 7, causing road damage and water wastage...'"
+              placeholder="What seems to be the problem? Be specific — e.g. 'Broken water pipeline leaking in Sector 7, causing road damage...'"
               required
               rows={5}
-              className="w-full bg-transparent text-white placeholder-slate-700 focus:outline-none resize-none text-base leading-relaxed"
+              className="w-full bg-transparent dark:text-white text-slate-900 placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none resize-none text-lg leading-relaxed font-medium relative z-10"
             />
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-slate-700">{description.length} characters</span>
+            <div className="mt-6 flex items-center justify-between relative z-10">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-3 py-1 rounded-lg">{description.length} characters</span>
               {isAnalyzing && (
-                <span className="flex items-center gap-1.5 text-xs text-blue-400">
-                  <Loader2 className="w-3 h-3 animate-spin" /> AI analyzing...
+                <span className="flex items-center gap-2 text-xs font-bold text-primary-600 dark:text-primary-400">
+                  <Loader2 className="w-4 h-4 animate-spin" /> AI analyzing...
                 </span>
               )}
             </div>
@@ -381,58 +380,65 @@ export default function NewComplaintPage() {
           <AnimatePresence>
             {analysisVisible && (
               <motion.div
-                initial={{ opacity: 0, y: -10, height: 0 }}
+                initial={{ opacity: 0, y: -20, height: 0 }}
                 animate={{ opacity: 1, y: 0, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 border border-blue-500/20 rounded-3xl p-6">
-                  <div className="flex items-center gap-2 mb-5">
-                    <Brain className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">AI Intelligence Report</h3>
-                    <Sparkles className="w-3 h-3 text-purple-400 ml-auto animate-pulse" />
+                <div className="bg-gradient-to-br from-primary-500/[0.08] via-indigo-500/[0.05] to-purple-500/[0.08] border-2 border-primary-500/20 rounded-[2.5rem] p-8 shadow-2xl relative">
+                  <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary-500/10 rounded-full blur-[80px]" />
+                  <div className="flex items-center gap-3 mb-8 relative z-10">
+                    <div className="w-10 h-10 rounded-2xl bg-primary-500/10 flex items-center justify-center border border-primary-500/20">
+                      <Brain className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <h3 className="text-sm font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em]">AI Intelligence Report</h3>
+                    <Sparkles className="w-4 h-4 text-purple-500 ml-auto animate-pulse" />
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6 relative z-10">
                     {/* Category */}
-                    <div className="col-span-2 bg-white/5 rounded-2xl p-4">
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Detected Category</p>
-                      <p className="text-white font-bold">{effectiveCategory || 'General'}</p>
+                    <div className="col-span-2 glass-card dark:bg-white/5 bg-white/40 rounded-3xl p-5 border shadow-sm">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-2">Detected Category</p>
+                      <p className="dark:text-white text-slate-900 font-black text-lg">{effectiveCategory || 'General'}</p>
                     </div>
                     {/* Priority */}
-                    <div className={`${priorityInfo.bg} ${priorityInfo.border} border rounded-2xl p-4`}>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Priority</p>
-                      <p className={`font-bold text-sm ${priorityInfo.color}`}>{priorityInfo.icon} {priorityInfo.label}</p>
-                      <p className="text-[9px] text-slate-600 mt-1">{priorityInfo.desc}</p>
+                    <div className={`glass-card dark:bg-white/5 bg-white/40 rounded-3xl p-5 border-2 ${priorityInfo.border.replace('30', '50')} shadow-sm`}>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-2">Priority</p>
+                      <p className={`font-black text-base flex items-center gap-2 ${priorityInfo.color.replace('-400', '-600')}`}>
+                         {priorityInfo.icon} {priorityInfo.label}
+                      </p>
+                      <p className="text-[9px] text-slate-500 font-bold mt-1 leading-tight">{priorityInfo.desc}</p>
                     </div>
                     {/* SLA */}
-                    <div className="bg-white/5 rounded-2xl p-4">
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> SLA Deadline
+                    <div className="glass-card dark:bg-white/5 bg-white/40 rounded-3xl p-5 border shadow-sm">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-2 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> SLA Deadline
                       </p>
-                      <p className="text-white font-bold text-sm">{slaTime}</p>
+                      <p className="dark:text-white text-slate-900 font-black text-base">{slaTime}</p>
                     </div>
                   </div>
 
                   {/* Department */}
-                  <div className="flex items-center gap-3 bg-white/5 rounded-2xl p-4 mb-4">
-                    <Building2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <div className="flex items-center gap-4 glass-card dark:bg-white/5 bg-white/40 rounded-3xl p-6 mb-6 relative z-10 border shadow-md">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                      <Building2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    </div>
                     <div>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest">Routed to Department</p>
-                      <p className="text-white font-bold text-sm">{dept}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-1">Routed to Department</p>
+                      <p className="dark:text-white text-slate-900 font-black text-base">{dept}</p>
                     </div>
                     <div className="ml-auto">
-                      <span className="text-[10px] px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full">Auto-routed</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-sm">Auto-routed</span>
                     </div>
                   </div>
 
                   {/* Tags */}
                   {aiTags.length > 0 && (
-                    <div>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-2">AI-Generated Tags</p>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="relative z-10">
+                      <p className="text-[10px] text-slate-500 uppercase tracking-widest font-black mb-3">AI-Generated Tags</p>
+                      <div className="flex flex-wrap gap-2.5">
                         {aiTags.map(tag => (
-                          <span key={tag} className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs rounded-xl font-mono">
+                          <span key={tag} className="px-3 py-1.5 bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-sm">
                             #{tag}
                           </span>
                         ))}
@@ -445,31 +451,31 @@ export default function NewComplaintPage() {
           </AnimatePresence>
 
           {/* ── Category + Location ──────────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Category */}
-            <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-5">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">
-                <Tag className="w-3.5 h-3.5" />
+            <div className="glass-card rounded-[2.5rem] p-6 shadow-xl border-2">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 mb-4 uppercase tracking-widest">
+                <Tag className="w-4 h-4 text-primary-500" />
                 {t('category')}
               </label>
               <div className="relative">
                 <select
                   value={category}
                   onChange={e => setCategory(e.target.value)}
-                  className="w-full bg-transparent text-white focus:outline-none appearance-none cursor-pointer pr-8"
+                  className="w-full bg-transparent dark:text-white text-slate-900 font-bold focus:outline-none appearance-none cursor-pointer pr-10 py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-primary-500/50"
                 >
-                  <option value="" className="bg-slate-900">⚡ Auto-detect (AI)</option>
+                  <option value="" className="dark:bg-slate-900 bg-white">⚡ Auto-detect (AI)</option>
                   {CATEGORIES.map(c => (
-                    <option key={c} value={c} className="bg-slate-900">{c}</option>
+                    <option key={c} value={c} className="dark:bg-slate-900 bg-white">{c}</option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 pointer-events-none" />
+                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
               </div>
             </div>
             {/* Location */}
-            <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-5">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">
-                <MapPin className="w-3.5 h-3.5" />
+            <div className="glass-card rounded-[2.5rem] p-6 shadow-xl border-2">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 mb-4 uppercase tracking-widest">
+                <MapPin className="w-4 h-4 text-rose-500 font-bold" />
                 {t('exactLocation')} *
               </label>
               <input
@@ -478,34 +484,41 @@ export default function NewComplaintPage() {
                 onChange={e => setLocation(e.target.value)}
                 placeholder="e.g. Lajpat Nagar Market, Block C"
                 required
-                className="w-full bg-transparent text-white placeholder-slate-700 focus:outline-none"
+                className="w-full bg-transparent dark:text-white text-slate-900 font-bold placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-rose-500/50"
               />
             </div>
           </div>
 
           {/* ── Image Upload ─────────────────────────────────────────── */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                <Camera className="w-3.5 h-3.5" />
+          <div className="glass-card rounded-[2.5rem] p-8 shadow-xl border-2">
+            <div className="flex items-center justify-between mb-6">
+              <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <Camera className="w-4 h-4 text-indigo-500" />
                 {t('photoEvidence')}
               </label>
-              <span className="text-[10px] text-slate-600">{images.length}/5 photos</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-2.5 py-1 rounded-lg">
+                {images.length} / 5 photos
+              </span>
             </div>
 
             {imagePreviews.length > 0 && (
-              <div className="flex flex-wrap gap-3 mb-4">
+              <div className="flex flex-wrap gap-4 mb-6">
                 {imagePreviews.map((src, i) => (
-                  <div key={i} className="relative group w-20 h-20">
-                    <img src={src} alt="" className="w-full h-full object-cover rounded-2xl border border-white/10" />
+                  <motion.div 
+                    key={i} 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative group w-24 h-24"
+                  >
+                    <img src={src} alt="" className="w-full h-full object-cover rounded-2xl border-2 border-white/10 shadow-lg" />
                     <button
                       type="button"
                       onClick={() => removeImage(i)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -top-3 -right-3 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg transform scale-0 group-hover:scale-100 transition-transform active:scale-90"
                     >
-                      <X className="w-3 h-3 text-white" />
+                      <X className="w-4 h-4" />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -515,59 +528,63 @@ export default function NewComplaintPage() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={images.length >= 5}
-              className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-slate-500 hover:border-blue-500/40 hover:text-blue-400 hover:bg-blue-500/5 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40"
+              className="w-full py-6 border-2 border-dashed dark:border-white/10 border-slate-200 rounded-[2rem] text-slate-400 dark:text-slate-500 hover:border-primary-500/50 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-500/5 transition-all flex flex-col items-center justify-center gap-2 text-sm disabled:opacity-40 group"
             >
-              <Upload className="w-4 h-4" />
-              {images.length === 0 ? 'Add photos (up to 5)' : 'Add more photos'}
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-primary-500/10 transition-colors">
+                <Upload className="w-6 h-6" />
+              </div>
+              <span className="font-bold uppercase tracking-widest text-[10px]">
+                {images.length === 0 ? 'Click to upload proof' : 'Add more photos'}
+              </span>
             </button>
           </div>
 
           {/* ── Voice Input ──────────────────────────────────────────── */}
-          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6">
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-4 uppercase tracking-widest">
-              <Mic className="w-3.5 h-3.5" />
+          <div className="glass-card rounded-[2.5rem] p-8 shadow-xl border-2">
+            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 mb-6 uppercase tracking-widest">
+              <Mic className="w-4 h-4 text-emerald-500" />
               {t('voiceNote')}
-              <span className="text-[10px] text-slate-700 normal-case tracking-normal ml-1">— For users who prefer speaking</span>
+              <span className="text-[9px] text-slate-400 normal-case tracking-normal ml-2 font-medium">(Optional) — For voice description</span>
             </label>
 
             {voiceBlob ? (
-              <div className="flex items-center gap-4 p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
+              <div className="flex items-center gap-6 p-6 bg-emerald-500/5 dark:bg-emerald-500/10 border-2 border-emerald-500/20 rounded-[2rem] shadow-inner">
                 <button type="button" onClick={playVoice}
-                  className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center hover:bg-emerald-500/30 transition-colors"
+                  className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center hover:bg-emerald-600 transition-all shadow-lg active:scale-95 flex-shrink-0"
                 >
-                  {isPlayingVoice ? <Pause className="w-4 h-4 text-emerald-400" /> : <Play className="w-4 h-4 text-emerald-400" />}
+                  {isPlayingVoice ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
                 </button>
                 <div className="flex-1">
-                  <p className="text-sm text-white font-medium">Voice note recorded</p>
-                  <p className="text-xs text-slate-500">{formatTime(voiceDuration)} duration</p>
+                  <p className="text-sm dark:text-white text-slate-900 font-bold uppercase tracking-widest">Voice Recorded</p>
+                  <p className="text-xs text-slate-500 font-medium">{formatTime(voiceDuration)} duration</p>
                 </div>
-                <button type="button" onClick={deleteVoice} className="text-rose-400 hover:text-rose-300 transition-colors">
-                  <Trash2 className="w-4 h-4" />
+                <button type="button" onClick={deleteVoice} className="w-10 h-10 rounded-xl hover:bg-rose-500/10 text-rose-500 transition-colors flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+                  className={`w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all shadow-xl active:scale-95 ${
                     isRecording
-                      ? 'bg-rose-500 animate-pulse shadow-lg shadow-rose-500/40'
-                      : 'bg-white/5 border border-white/10 hover:bg-blue-500/10 hover:border-blue-500/30'
+                      ? 'bg-rose-500 text-white animate-pulse shadow-rose-500/40'
+                      : 'bg-slate-100 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 hover:border-emerald-500/30 text-slate-400 hover:text-emerald-500'
                   }`}
                 >
-                  {isRecording ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-slate-400" />}
+                  {isRecording ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
                 </button>
                 <div>
                   {isRecording ? (
                     <div>
-                      <p className="text-sm text-rose-400 font-bold animate-pulse">Recording... {formatTime(voiceDuration)}</p>
-                      <p className="text-xs text-slate-600">Click the button again to stop</p>
+                      <p className="text-lg text-rose-600 dark:text-rose-400 font-black uppercase tracking-widest animate-pulse">Recording... {formatTime(voiceDuration)}</p>
+                      <p className="text-xs text-slate-500 font-medium">Click the button again to stop</p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm text-slate-400">Click to start recording</p>
-                      <p className="text-xs text-slate-700">Speak clearly about the issue</p>
+                      <p className="text-lg dark:text-slate-400 text-slate-800 font-black uppercase tracking-widest">Start Voice Log</p>
+                      <p className="text-xs text-slate-500 font-medium">Speak clearly about the issue to the urban AI</p>
                     </div>
                   )}
                 </div>
@@ -576,17 +593,22 @@ export default function NewComplaintPage() {
           </div>
 
           {/* ── Submit ───────────────────────────────────────────────── */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-3xl transition-all flex items-center justify-center gap-3 text-lg shadow-2xl shadow-blue-500/20"
-          >
-            {isSubmitting ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Processing with AI...</>
-            ) : (
-              <><Zap className="w-5 h-5" /> {t('submit')}</>
-            )}
-          </button>
+          <div className="pt-4 pb-12">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-6 bg-gradient-to-r from-primary-600 via-blue-600 to-indigo-700 hover:from-primary-500 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-[2.5rem] transition-all flex items-center justify-center gap-3 text-xl shadow-2xl shadow-primary-500/30 active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <><Loader2 className="w-6 h-6 animate-spin" /> Processing with AI...</>
+              ) : (
+                <><Zap className="w-6 h-6 fill-current" /> {t('submit')}</>
+              )}
+            </button>
+            <p className="text-center text-[10px] text-slate-400 dark:text-slate-600 uppercase tracking-widest font-bold mt-6">
+              Verified Urban Intelligence Portal • Secure Transmission
+            </p>
+          </div>
         </form>
       </div>
     </div>
