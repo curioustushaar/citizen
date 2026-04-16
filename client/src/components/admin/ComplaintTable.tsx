@@ -88,16 +88,15 @@ export default function ComplaintTable({ complaints }: { complaints: Complaint[]
       success = res2.success || success;
 
       if (success) {
-        toast.success("Action logged & citizen notified!");
+        toast.success('Action logged & citizen notified!');
+        setLocalComplaints(prev => prev.map(c => (c._id || c.complaintId) === id ? {
+          ...c,
+          status: (updateStatus as any) || c.status,
+          assignedOfficerName: assignee || c.assignedOfficerName
+        } : c));
       } else {
-        toast.success("Updated in Local Memory (Demo Mode Active)");
+        toast.error('Update failed. Please retry.');
       }
-
-      setLocalComplaints(prev => prev.map(c => (c._id || c.complaintId) === id ? { 
-        ...c, 
-        status: (updateStatus as any) || c.status, 
-        assignedOfficerName: assignee || c.assignedOfficerName 
-      } : c));
       
       setViewingComplaint(null);
     } catch (err) {

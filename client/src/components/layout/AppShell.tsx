@@ -80,7 +80,13 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || user.role === 'PUBLIC') return null;
+  if (!user || user.role === 'PUBLIC') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return <AdminLayout>{children}</AdminLayout>;
 }
