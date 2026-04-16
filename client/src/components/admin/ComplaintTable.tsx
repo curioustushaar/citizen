@@ -19,6 +19,7 @@ interface Complaint {
   slaDeadline: string;
   location: { area: string; district: string };
   createdAt: string;
+  userName: string;
   _id?: string;
   lastRemark?: string;
   proofFileName?: string;
@@ -110,6 +111,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
           c.location?.area,
           c.location?.district,
           c.assignedOfficerName,
+          c.userName,
         ]
           .filter(Boolean)
           .join(' ')
@@ -256,7 +258,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5">
-              {['ID', 'Category', 'Location', 'Priority', 'Status', 'Officer', 'SLA', 'Actions'].map(
+              {['ID', 'Category', 'User', 'Location', 'Priority', 'Status', 'Officer', 'Date/Time', 'SLA', 'Actions'].map(
                 (h) => (
                   <th
                     key={h}
@@ -307,6 +309,12 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                     </div>
                   </td>
                   <td className="px-4 py-3">
+                    <span className="text-xs text-white/60 flex items-center gap-1">
+                      <User className="w-3 h-3 text-white/40" />
+                      {c.userName || 'Anonymous'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <span className="text-xs text-white/50">{c.location.area}</span>
                   </td>
                   <td className="px-4 py-3">
@@ -329,6 +337,17 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                   <td className="px-4 py-3">
                     <span className="text-xs text-white/50">
                       {c.assignedOfficerName || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs text-white/40 font-mono">
+                      {new Date(c.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -405,13 +424,34 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                   <h2 className="text-xl font-bold text-white leading-tight">
                     {viewingComplaint.description}
                   </h2>
-                  <p className="text-xs text-white/50 mt-1 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Reported: {new Date(viewingComplaint.createdAt).toLocaleString()}
-                  </p>
                 </div>
                 <button onClick={() => setViewingComplaint(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
                   <X className="w-5 h-5 text-white/60" />
                 </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Reported By</p>
+                  <p className="text-sm text-white font-medium flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-primary-400" />
+                    {viewingComplaint.userName || 'Anonymous'}
+                  </p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Reported At</p>
+                  <p className="text-sm text-white font-medium flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-primary-400" />
+                    {new Date(viewingComplaint.createdAt).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: '2-digit',
+                    })} {new Date(viewingComplaint.createdAt).toLocaleTimeString('en-IN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
