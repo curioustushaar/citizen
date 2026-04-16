@@ -8,6 +8,7 @@ import {
   detectCategory,
   detectPriority,
   getDepartment,
+  getDepartmentByCategory,
   calculateSLA,
   generateComplaintId,
 } from '../services/aiEngine';
@@ -54,15 +55,18 @@ export const createComplaint = async (req: Request, res: Response) => {
     const { description, location, userId, userName } = req.body;
     const { category, confidence: aiConfidence } = detectCategory(description);
     const priority = detectPriority(description);
-    const department = getDepartment(category);
-    const deptDoc = await Department.findOne({ name: department }).select('_id name');
+    
+    // Route complaint to the department that handles this category
+    const deptInfo = await getDepartmentByCategory(category);
+    const deptDoc = await Department.findOne({ name: deptInfo.name }).select('_id name');
     const departmentId = deptDoc?._id || null;
+    
     const slaDeadline = calculateSLA(category, priority);
     const complaintId = generateComplaintId();
     const confidence = aiConfidence;
 
-    // Find officer in the right department
-    const officer = await Officer.findOne({ department, isActive: true })
+    // Find officer in the routed department
+    const officer = await Officer.findOne({ department: deptInfo.name, isActive: true })
       .sort({ pendingCount: 1 });
 
     const complaint = await Complaint.create({
@@ -71,7 +75,7 @@ export const createComplaint = async (req: Request, res: Response) => {
       category,
       priority,
       status: 'PENDING',
-      department,
+      department: deptInfo.name,
       departmentId,
       location,
       assignedOfficer: officer?._id || null,
@@ -93,7 +97,7 @@ export const createComplaint = async (req: Request, res: Response) => {
       role: 'PUBLIC',
       targetType: 'complaint',
       targetId: complaintId,
-      details: `New ${priority} complaint: ${category} at ${location?.area || 'Unknown'}`,
+      details: `New ${priority} complaint: ${category} (${deptInfo.source === 'database' ? 'routed' : 'unmapped'}) → ${deptInfo.name} at ${location?.area || 'Unknown'}`,
     });
 
     res.status(201).json({ success: true, data: complaint });
