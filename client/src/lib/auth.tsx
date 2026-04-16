@@ -9,7 +9,7 @@ interface UserData {
   id: string;
   name: string;
   email: string;
-  role: 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN';
+  role: 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN' | 'citizen';
   department: string | null;
   region: string | null;
   phone: string;
@@ -48,27 +48,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [language, setLanguageState] = useState<Language>('en');
 
+  const normalizeUser = (usr: any) => ({
+    ...usr,
+    id: usr?.id || usr?._id,
+  });
+
   // Restore session & language on mount
   useEffect(() => {
-    try {
-      const savedToken = localStorage.getItem('grievance_token');
-      const savedUser = localStorage.getItem('grievance_user');
-      const savedLang = localStorage.getItem('grievance_lang');
-      
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
+    let isMounted = true;
+    const initAuth = async () => {
+      let restoredUser: UserData | null = null;
+      try {
+        const savedToken = localStorage.getItem('grievance_token');
+        const savedUser = localStorage.getItem('grievance_user');
+        const citizenToken = localStorage.getItem('citizen_token');
+        const savedLang = localStorage.getItem('grievance_lang');
+
+        if (savedToken && savedUser) {
+          restoredUser = normalizeUser(JSON.parse(savedUser));
+          if (isMounted) {
+            setToken(savedToken);
+            setUser(restoredUser);
+          }
+        }
+
+        if (savedLang === 'en' || savedLang === 'hi') {
+          setLanguageState(savedLang as Language);
+        }
+      } catch {
+        // Corrupt storage — clear it
+        localStorage.removeItem('grievance_token');
+        localStorage.removeItem('grievance_user');
       }
-      
-      if (savedLang === 'en' || savedLang === 'hi') {
-        setLanguageState(savedLang as Language);
+
+      if (!restoredUser) {
+        try {
+          const citizenToken = localStorage.getItem('citizen_token');
+          if (!citizenToken) {
+            if (isMounted) setIsLoading(false);
+            return;
+          }
+          const res = await fetch('/api/citizen/auth/me', {
+            credentials: 'include',
+            headers: citizenToken ? { Authorization: `Bearer ${citizenToken}` } : undefined,
+          });
+          const data = await res.json();
+          if (res.ok && data?.success && data?.user && isMounted) {
+            setUser(normalizeUser(data.user));
+          }
+        } catch {
+          // Ignore cookie-based auth failures
+        }
       }
-    } catch {
-      // Corrupt storage — clear it
-      localStorage.removeItem('grievance_token');
-      localStorage.removeItem('grievance_user');
-    }
-    setIsLoading(false);
+
+      if (isMounted) setIsLoading(false);
+    };
+
+    initAuth();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const setLanguage = (lang: Language) => {
@@ -82,10 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const saveSession = (tkn: string, usr: any) => {
     // Normalize user object structure (id vs _id)
-    const normalizedUser = {
-      ...usr,
-      id: usr.id || usr._id
-    };
+    const normalizedUser = normalizeUser(usr);
     setToken(tkn);
     setUser(normalizedUser);
     localStorage.setItem('grievance_token', tkn);

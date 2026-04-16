@@ -53,6 +53,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isAdminUser = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
     if (isLoading) return;
@@ -62,7 +63,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (user.role === 'PUBLIC') {
+    if (!isAdminUser) {
       router.replace('/citizen/login');
       return;
     }
@@ -80,7 +81,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || user.role === 'PUBLIC') return null;
+  if (!user || !isAdminUser) return null;
 
   return <AdminLayout>{children}</AdminLayout>;
 }
