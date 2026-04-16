@@ -38,6 +38,59 @@ async function fetchApi<T>(
 }
 
 export const api = {
+  // ── Admin (Tenant Scoped) ─────────────────────────────
+  getAdminComplaints: async (params?: string) => {
+    return await fetchApi<any[]>(`/admin/complaints${params ? `?${params}` : ''}`);
+  },
+
+  acceptAdminComplaint: async (id: string) => {
+    return await fetchApi<any>(`/admin/complaints/${id}/accept`, { method: 'PATCH' });
+  },
+
+  assignAdminComplaint: async (id: string, officerId: string) => {
+    return await fetchApi<any>(`/admin/complaints/${id}/assign`, {
+      method: 'PATCH',
+      body: JSON.stringify({ officerId }),
+    });
+  },
+
+  updateAdminComplaintStatus: async (id: string, status: string, remarks?: string) => {
+    return await fetchApi<any>(`/admin/complaints/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, remarks }),
+    });
+  },
+
+  addAdminComplaintRemark: async (id: string, text: string) => {
+    return await fetchApi<any>(`/admin/complaints/${id}/remark`, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+  },
+
+  getAdminOfficers: async () => {
+    return await fetchApi<any[]>('/admin/officers');
+  },
+
+  createAdminOfficer: async (data: any) => {
+    return await fetchApi<any>('/admin/officers', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  getSubDepartments: async () => {
+    return await fetchApi<any[]>('/admin/sub-departments');
+  },
+
+  createSubDepartment: async (data: any) => {
+    return await fetchApi<any>('/admin/sub-departments', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  updateSubDepartment: async (id: string, data: any) => {
+    return await fetchApi<any>(`/admin/sub-departments/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  },
+
+  deleteSubDepartment: async (id: string) => {
+    return await fetchApi<any>(`/admin/sub-departments/${id}`, { method: 'DELETE' });
+  },
   // ── Complaints ──────────────────────────────────────────
   getComplaints: async (params?: string) => {
     return await fetchApi<any[]>(`/complaints${params ? `?${params}` : ''}`);

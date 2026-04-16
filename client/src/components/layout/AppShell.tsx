@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import UserLayout from './UserLayout';
 import AdminLayout from './AdminLayout';
 
-const AUTH_PATHS = ['/admin/login', '/superadmin/login', '/citizen/login'];
+const AUTH_PATHS = ['/admin/login', '/superadmin/login', '/citizen/login', '/sub-department/login'];
 const PORTAL_PATHS = ['/', '/portal'];
 
 function isAuthPath(pathname: string) {
@@ -20,6 +20,7 @@ function isPortalPath(pathname: string) {
 function isAdminPath(pathname: string) {
   return (
     pathname.startsWith('/admin') ||
+    pathname.startsWith('/sub-department') ||
     pathname.startsWith('/superadmin') ||
     pathname.startsWith('/analytics') ||
     pathname.startsWith('/officer')

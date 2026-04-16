@@ -3,6 +3,7 @@ import Complaint from '../models/Complaint';
 import Officer from '../models/Officer';
 import Escalation from '../models/Escalation';
 import AuditLog from '../models/AuditLog';
+import Department from '../models/Department';
 import {
   detectCategory,
   detectPriority,
@@ -54,6 +55,8 @@ export const createComplaint = async (req: Request, res: Response) => {
     const { category, confidence: aiConfidence } = detectCategory(description);
     const priority = detectPriority(description);
     const department = getDepartment(category);
+    const deptDoc = await Department.findOne({ name: department }).select('_id name');
+    const departmentId = deptDoc?._id || null;
     const slaDeadline = calculateSLA(category, priority);
     const complaintId = generateComplaintId();
     const confidence = aiConfidence;
@@ -69,6 +72,7 @@ export const createComplaint = async (req: Request, res: Response) => {
       priority,
       status: 'PENDING',
       department,
+      departmentId,
       location,
       assignedOfficer: officer?._id || null,
       assignedOfficerName: officer?.name || null,

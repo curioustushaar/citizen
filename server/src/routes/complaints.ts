@@ -145,6 +145,7 @@ router.post(
         categories: { $regex: new RegExp(`^${escapedCategory}$`, 'i') },
       }).select('name');
       const department = deptDoc?.name || getDepartment(category);
+      const departmentId = deptDoc?._id || null;
       const slaDeadline = calculateSLA(category, priority);
       const tags = generateTags(description, category);
 
@@ -164,6 +165,7 @@ router.post(
         category,
         priority,
         department,
+        departmentId,
         slaDeadline,
         tags,
         imageUrls,

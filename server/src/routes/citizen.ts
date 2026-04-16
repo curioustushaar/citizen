@@ -9,6 +9,7 @@ import departmentRoutes from './departments';
 import slaRoutes from './sla';
 import auditRoutes from './audit';
 import simulateRoutes from './simulate';
+import adminRoutes from './admin';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/departments', departmentRoutes);
 router.use('/sla', slaRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/simulate', simulateRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
