@@ -255,4 +255,9 @@ export const api = {
   simulateCrisis: async () => {
     return await fetchApi<any>('/simulate', { method: 'POST' });
   },
+
+  // ── Generic fetch method ────────────────────────────────
+  fetchApi: async <T,>(endpoint: string, options?: RequestInit) => {
+    return await fetchApi<T>(endpoint, options);
+  },
 };
