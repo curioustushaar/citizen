@@ -4,6 +4,7 @@ import Officer from '../models/Officer';
 import Escalation from '../models/Escalation';
 import AuditLog from '../models/AuditLog';
 import Department from '../models/Department';
+import { emitToDepartment, emitToUser } from '../socket';
 import {
   detectCategory,
   detectPriority,
@@ -98,6 +99,17 @@ export const createComplaint = async (req: Request, res: Response) => {
       targetType: 'complaint',
       targetId: complaintId,
       details: `New ${priority} complaint: ${category} (${deptInfo.source === 'database' ? 'routed' : 'unmapped'}) → ${deptInfo.name} at ${location?.area || 'Unknown'}`,
+    });
+
+    // Emit real-time notification to department admins
+    emitToDepartment(deptInfo.name, 'new_complaint', {
+      complaintId,
+      category,
+      priority,
+      userName,
+      location: location?.area,
+      description: description.substring(0, 100),
+      timestamp: new Date(),
     });
 
     res.status(201).json({ success: true, data: complaint });

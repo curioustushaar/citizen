@@ -398,19 +398,19 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
       </div>
 
       {viewingComplaint && (
-        <div className="fixed inset-0 z-[120]">
+        <div className="fixed inset-0 z-[120] flex items-start justify-center pt-8">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setViewingComplaint(null)}
           />
           <motion.div
-            initial={{ x: 420, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 420, opacity: 0 }}
+            initial={{ y: -50, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -50, opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-            className="absolute right-0 top-0 h-full w-full max-w-[480px] bg-slate-950/90 border-l border-white/10 shadow-2xl"
+            className="relative w-full max-w-2xl bg-slate-950/95 border border-white/10 shadow-2xl rounded-2xl max-h-[90vh] overflow-y-auto"
           >
-            <div className="h-full overflow-y-auto p-6">
+            <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -425,7 +425,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                     {viewingComplaint.description}
                   </h2>
                 </div>
-                <button onClick={() => setViewingComplaint(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                <button onClick={() => setViewingComplaint(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors flex-shrink-0">
                   <X className="w-5 h-5 text-white/60" />
                 </button>
               </div>

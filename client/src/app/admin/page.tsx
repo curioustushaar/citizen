@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, FileText, PlusCircle, PencilLine, Trash2, MapPin, Tag, AlertCircle } from 'lucide-react';
+import { Shield, Users, FileText, PlusCircle, PencilLine, Trash2, MapPin, Tag, AlertCircle, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
+import { onEvent } from '@/lib/socket';
 import ComplaintTable from '@/components/admin/ComplaintTable';
 import { api } from '@/lib/api';
 
@@ -131,6 +132,42 @@ export default function AdminPage() {
     };
     fetchData();
   }, [user]);
+
+  // Listen for real-time complaint notifications
+  useEffect(() => {
+    const unsubscribe = onEvent('new_complaint', (data: any) => {
+      toast.custom((t) => (
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          className="glass-card p-4 border border-primary-500/30 bg-primary-500/10 flex items-start gap-3 max-w-md"
+        >
+          <Bell className="w-5 h-5 text-primary-400 flex-shrink-0 mt-1" />
+          <div className="flex-1">
+            <p className="font-semibold text-primary-300 mb-1">New Complaint Received</p>
+            <p className="text-sm text-white/70 mb-2">
+              <span className="font-mono text-primary-400">#{data.complaintId?.slice(-6)}</span> - {data.category}
+            </p>
+            <p className="text-xs text-white/60">📍 {data.location} | 👤 {data.userName}</p>
+          </div>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="text-white/40 hover:text-white/60"
+          >
+            ✕
+          </button>
+        </motion.div>
+      ), { duration: 5000, position: 'top-right' });
+      
+      // Refresh complaints list
+      api.getAdminComplaints().then(res => {
+        if (res.success) setComplaints(res.data as any[]);
+      });
+    });
+
+    return () => unsubscribe?.();
+  }, []);
 
   const tabs = [
     { key: 'complaints' as const, label: 'Complaints', icon: FileText, count: complaints.length },
