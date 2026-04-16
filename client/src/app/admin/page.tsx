@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, FileText, PlusCircle, PencilLine, Trash2 } from 'lucide-react';
+import { Shield, Users, FileText, PlusCircle, PencilLine, Trash2, MapPin, Tag, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
 import ComplaintTable from '@/components/admin/ComplaintTable';
@@ -23,6 +23,8 @@ export default function AdminPage() {
 
   const [complaints, setComplaints] = useState<any[]>([]);
   const [subDepartments, setSubDepartments] = useState<any[]>([]);
+  const [departmentInfo, setDepartmentInfo] = useState<any>(null);
+  const [departmentCategories, setDepartmentCategories] = useState<string[]>([]);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditMember, setShowEditMember] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -104,13 +106,28 @@ export default function AdminPage() {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [compRes, subRes] = await Promise.all([
+      const [compRes, subRes, deptRes] = await Promise.all([
         api.getAdminComplaints(),
         api.getSubDepartments(),
+        api.fetchApi<any>('/admin/department'),
       ]);
 
       if (compRes.success) setComplaints(compRes.data as any[]);
       if (subRes.success) setSubDepartments(subRes.data as any[]);
+      
+      // Fetch full department info from API
+      if (deptRes.success && deptRes.data) {
+        setDepartmentInfo(deptRes.data);
+        if (deptRes.data.categories) {
+          setDepartmentCategories(Array.isArray(deptRes.data.categories) ? deptRes.data.categories : []);
+        }
+      } else {
+        // Fallback to user data
+        setDepartmentInfo({
+          name: user.department,
+          departmentId: user.departmentId,
+        });
+      }
     };
     fetchData();
   }, [user]);
@@ -134,17 +151,67 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="w-5 h-5 text-primary-400" />
-            <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Admin Control Room</h1>
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-6 h-6 text-primary-400" />
+            <h1 className="text-3xl font-bold text-white uppercase tracking-tight">Admin Control Room</h1>
           </div>
-          <p className="text-sm text-white/40">
+          <p className="text-sm text-white/60 mb-4">
             {departmentName} Management Panel
           </p>
+          
+          {/* Department Info Card */}
+          <div className="glass-card p-4 border border-primary-500/20 bg-primary-500/5 max-w-md">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-primary-400" />
+                <span className="text-xs uppercase tracking-widest text-white/60">Department</span>
+              </div>
+              <p className="text-lg font-bold text-white">{user?.department || 'Loading...'}</p>
+              
+              {/* Categories Info */}
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Tag className="w-4 h-4 text-primary-400" />
+                  <span className="text-xs uppercase tracking-widest text-white/60">Assigned Categories</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {departmentCategories.length > 0 ? (
+                    departmentCategories.slice(0, 8).map(cat => (
+                      <span key={cat} className="text-xs bg-primary-500/20 text-primary-300 px-2.5 py-1 rounded-lg border border-primary-500/30">
+                        {cat}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-white/40 italic">No categories assigned</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Out-of-scope Category Warning */}
+      {complaints.length > 0 && departmentCategories.length > 0 && complaints.some(c => 
+        c.category && !departmentCategories.includes(c.category)
+      ) && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-4 border border-warning-500/20 bg-warning-500/5 flex items-start gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-warning-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-warning-300">Out-of-Scope Complaints Detected</p>
+            <p className="text-xs text-white/60 mt-1">
+              {complaints.filter(c => c.category && !departmentCategories.includes(c.category)).length} complaints received with categories not assigned to your department. These should be escalated to the appropriate department.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[{
