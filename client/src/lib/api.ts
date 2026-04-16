@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 function getAuthHeaders(): Record<string, string> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('grievance_token') : null;
@@ -167,7 +167,7 @@ export const api = {
     const formData = new FormData();
     formData.append('avatar', file);
     const token = typeof window !== 'undefined' ? localStorage.getItem('grievance_token') : null;
-    const res = await fetch('/api/users/avatar', {
+    const res = await fetch(`${API_BASE}/users/avatar`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
       body: formData,
