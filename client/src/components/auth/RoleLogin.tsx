@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, LogIn, Eye, EyeOff, ShieldCheck, Users, UserCircle2 } from 'lucide-react';
+import { Mail, Lock, LogIn, Eye, EyeOff, ShieldCheck, Users, UserCircle2, User, Phone } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
 type RoleType = 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN';
@@ -24,13 +24,16 @@ const roleMeta: Record<RoleType, { icon: any; label: string }> = {
 
 export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo = true }: RoleLoginProps) {
   const router = useRouter();
-  const { login, demoLogin } = useAuth();
+  const { login, demoLogin, register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [particles, setParticles] = useState<any[]>([]);
+  const [mode, setMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
     const p = [...Array(18)].map((_, i) => ({
@@ -61,6 +64,27 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
         setError(`Invalid credentials or access denied for ${roleMeta[role].label} portal.`);
       }
     }
+    setLoading(false);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const res = await register({
+      name,
+      email,
+      password,
+      phone,
+    });
+
+    if (res.ok) {
+      router.push(redirectTo);
+    } else {
+      setError(res.error || 'Registration failed. Please try again.');
+    }
+
     setLoading(false);
   };
 
@@ -152,8 +176,37 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
 
           <div className="login-mode-header">
             <h2 className="login-mode-title">
-              Login <span className="login-mode-title-thin">to your account</span>
+              {mode === 'login' ? 'Login' : 'Register'}{' '}
+              <span className="login-mode-title-thin">
+                {mode === 'login' ? 'to your account' : 'for a new account'}
+              </span>
             </h2>
+            {role === 'PUBLIC' && (
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    mode === 'login'
+                      ? 'bg-primary-500/20 text-primary-300 border border-primary-500/30'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                  }`}
+                >
+                  Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('register')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    mode === 'register'
+                      ? 'bg-primary-500/20 text-primary-300 border border-primary-500/30'
+                      : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                  }`}
+                >
+                  Register
+                </button>
+              </div>
+            )}
           </div>
 
           <AnimatePresence>
@@ -169,7 +222,36 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
             )}
           </AnimatePresence>
 
-          <form onSubmit={handleLogin} className="login-form">
+          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="login-form">
+            {role === 'PUBLIC' && mode === 'register' && (
+              <>
+                <div className="login-field">
+                  <div className="login-input-wrapper">
+                    <User className="login-input-icon" />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="login-input"
+                      placeholder="Full name"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="login-field">
+                  <div className="login-input-wrapper">
+                    <Phone className="login-input-icon" />
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="login-input"
+                      placeholder="Phone (optional)"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
             <div className="login-field">
               <div className="login-input-wrapper">
                 <Mail className="login-input-icon" />
@@ -211,13 +293,13 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
               ) : (
                 <>
                   <LogIn className="w-5 h-5" />
-                  <span>Login</span>
+                  <span>{mode === 'login' ? 'Login' : 'Register'}</span>
                 </>
               )}
             </button>
           </form>
 
-          {allowDemo && (
+          {allowDemo && mode === 'login' && (
             <div className="login-demo-section">
               <div className="login-divider">
                 <span>Demo Access</span>
