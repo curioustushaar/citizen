@@ -91,30 +91,7 @@ export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
       )}
 
-      {user && (
-        <div className={`px-3 py-3 border-b border-white/[0.06] ${collapsed ? 'flex justify-center' : ''}`}>
-          {collapsed ? (
-            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center shadow-lg`}>
-              <User className="w-4 h-4 text-white" />
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-9 h-9 rounded-lg bg-gradient-to-br ${roleColors[user.role]} flex items-center justify-center flex-shrink-0`}
-                style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
-              >
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-                <p className={`text-[10px] font-medium ${roleBadgeBg[user.role]} inline-block px-1.5 py-0.5 rounded mt-0.5`}>
-                  {user.role.replace('_', ' ')}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {user && <div className="border-b border-white/[0.06]" />}
 
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
