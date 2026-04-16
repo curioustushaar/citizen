@@ -96,6 +96,10 @@ export const api = {
     return await fetchApi<any[]>(`/complaints${params ? `?${params}` : ''}`);
   },
 
+  getMyComplaints: async () => {
+    return await fetchApi<any[]>(`/complaints/my`);
+  },
+
   getComplaint: async (id: string) => {
     return await fetchApi<any>(`/complaints/${id}`);
   },
