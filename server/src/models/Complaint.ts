@@ -12,6 +12,7 @@ export interface IComplaint extends Document {
   status: string;
   priority: string;
   department: string;
+  departmentId: mongoose.Types.ObjectId | null;
   slaDeadline: Date;
   resolvedAt: Date | null;
   notes: {
@@ -27,6 +28,7 @@ export interface IComplaint extends Document {
   userName: string;
   assignedOfficer: string;
   assignedOfficerName: string;
+  assignedTo: string;
   feedback: {
     satisfied: boolean;
     comment: string;
@@ -51,6 +53,7 @@ const ComplaintSchema = new Schema<IComplaint>(
     status:      { type: String, default: 'pending' },
     priority:    { type: String, default: 'MEDIUM' },
     department:  { type: String, default: 'General Administration' },
+    departmentId: { type: Schema.Types.ObjectId, ref: 'Department', default: null },
     slaDeadline: { type: Date },
     resolvedAt:  { type: Date, default: null },
     notes: [
@@ -68,6 +71,7 @@ const ComplaintSchema = new Schema<IComplaint>(
     userName:    { type: String, default: 'Anonymous' },
     assignedOfficer: { type: String, default: 'Unassigned' },
     assignedOfficerName: { type: String, default: '' },
+    assignedTo: { type: String, default: '' },
     feedback: {
       satisfied: { type: Boolean },
       comment: { type: String },
