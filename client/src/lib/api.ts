@@ -251,4 +251,16 @@ export const api = {
   simulateCrisis: async () => {
     return await fetchApi<any>('/simulate', { method: 'POST' });
   },
+
+  // ── Superadmin Admin Management ───────────────────────
+  getSuperadminAdmins: async () => {
+    return await fetchApi<any[]>('/superadmin/admins');
+  },
+
+  warnSuperadminAdmin: async (id: string, message: string) => {
+    return await fetchApi<any>(`/superadmin/admins/${id}/warn`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    });
+  },
 };
