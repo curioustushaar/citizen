@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Language, TranslationKey, translations } from './translations';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
 interface UserData {
   id: string;
   name: string;
@@ -28,6 +30,8 @@ interface AuthContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: TranslationKey) => string;
+  login: (email: string, password: string, requiredRole?: UserData['role']) => Promise<boolean>;
+  demoLogin: (role: UserData['role']) => Promise<boolean>;
   register: (data: any) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -54,19 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
-      } else {
-        // AUTO-LOGIN AS DEFAULT CITIZEN FOR STANDALONE REPO
-        const mockUser: UserData = {
-          id: 'demo-citizen-123',
-          name: 'Demo Citizen',
-          email: 'citizen@example.com',
-          role: 'PUBLIC',
-          department: null,
-          region: 'Delhi NCR',
-          phone: '+91 9876543210'
-        };
-        setUser(mockUser);
-        setToken('demo-token-active-citizen');
       }
       
       if (savedLang === 'en' || savedLang === 'hi') {
@@ -101,12 +92,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('grievance_user', JSON.stringify(normalizedUser));
   };
 
+  const login = async (email: string, password: string, requiredRole?: UserData['role']): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const userRole = data.data.user.role as UserData['role'];
+        if (requiredRole && userRole !== requiredRole) {
+          const superAdminAccessingAdmin = requiredRole === 'ADMIN' && userRole === 'SUPER_ADMIN';
+          if (!superAdminAccessingAdmin) {
+            localStorage.setItem('grievance_user_auth_error_role', userRole);
+            return false;
+          }
+        }
+        saveSession(data.data.token, data.data.user);
+        return true;
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+    }
+    return false;
+  };
+
+  const demoLogin = async (role: UserData['role']): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/demo-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        saveSession(data.data.token, data.data.user);
+        return true;
+      }
+    } catch (err) {
+      console.error('Demo login error:', err);
+    }
+    return false;
+  };
+
   const refreshUser = async () => {
     const activeToken = token || localStorage.getItem('grievance_token');
     if (!activeToken) return;
 
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await fetch(`${API_BASE}/users/me`, {
         headers: { 'Authorization': `Bearer ${activeToken}` }
       });
       const data = await res.json();
@@ -120,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (formData: any): Promise<{ ok: boolean; error?: string }> => {
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -152,6 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         language,
         setLanguage,
         t,
+        login,
+        demoLogin,
         register,
         logout,
         refreshUser,
