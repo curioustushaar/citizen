@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart3,
+  LayoutDashboard,
   Shield,
   ChevronLeft,
   ChevronRight,
@@ -34,10 +35,11 @@ export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
 
   const navItems = user?.role === 'SUPER_ADMIN'
     ? [
-        { label: 'Control Room', icon: Shield, href: '/superadmin' },
-        { label: 'Admin Panel', icon: Building2, href: '/admin' },
-        { label: 'Analytics', icon: BarChart3, href: '/analytics' },
-        { label: 'Officer Desk', icon: Users, href: '/officer' },
+        { label: 'Dashboard', icon: LayoutDashboard, href: '/superadmin/dashboard' },
+        { label: 'Control Room', icon: Shield, href: '/superadmin/controlroom' },
+        { label: 'Admin Panel', icon: Building2, href: '/superadmin/adminpanel' },
+        { label: 'Analytics', icon: BarChart3, href: '/superadmin/analytics' },
+        { label: 'Officer Desk', icon: Users, href: '/superadmin/officer-desk' },
       ]
     : [
         { label: 'Admin Panel', icon: Shield, href: '/admin' },
@@ -116,7 +118,15 @@ export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
 
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === '/superadmin/controlroom'
+            ? pathname === item.href || pathname === '/superadmin'
+            : item.href === '/superadmin/adminpanel'
+              ? pathname === item.href || pathname === '/admin'
+              : item.href === '/superadmin/analytics'
+                ? pathname === item.href || pathname === '/analytics'
+                : item.href === '/superadmin/officer-desk'
+                  ? pathname === item.href || pathname === '/officer'
+                  : pathname === item.href;
           const Icon = item.icon;
 
           return (
@@ -149,7 +159,7 @@ export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
           <button
             onClick={() => {
               logout();
-              router.push(getLoginPath(pathname));
+              router.replace(getLoginPath(pathname));
             }}
             className={`nav-link w-full text-danger-400/60 hover:text-danger-400 hover:bg-danger-500/5 ${collapsed ? 'justify-center px-0' : ''}`}
           >
