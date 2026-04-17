@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Search, Bell, Menu, AlertTriangle, LogIn } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import AdminThemeToggle from './AdminThemeToggle';
+import { onEvent } from '@/lib/socket';
 import toast from 'react-hot-toast';
 
 interface TopbarProps {
@@ -21,9 +22,44 @@ export default function AdminTopbar({ onMenuToggle }: TopbarProps) {
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [notifications] = useState(3);
+  const [notificationList, setNotificationList] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [crisisLoading, setCrisisLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.getNotifications();
+      if (res.success) setNotificationList(res.data || []);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchNotifications();
+
+    const unSub = onEvent('notification_created', (note) => {
+      setNotificationList((prev) => [note, ...prev]);
+      toast('New admin notice received', { icon: '📣' });
+    }, localStorage.getItem('grievance_token'));
+
+    return () => {
+      unSub();
+    };
+  }, [user]);
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      await api.markNotificationAsRead(id);
+      setNotificationList((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+    } catch {
+      // ignore
+    }
+  };
+
+  const unreadCount = notificationList.filter((n) => !n.isRead).length;
 
   const handleSimulateCrisis = async () => {
     setCrisisLoading(true);
@@ -94,9 +130,12 @@ export default function AdminTopbar({ onMenuToggle }: TopbarProps) {
           {crisisLoading ? 'Simulating...' : 'Simulate Crisis'}
         </button>
 
-        <button className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5">
+        <button
+          onClick={() => setShowNotifications(!showNotifications)}
+          className={`relative p-2 rounded-xl transition-colors ${showNotifications ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5'}`}
+        >
           <Bell className="w-5 h-5" />
-          {notifications > 0 && (
+          {unreadCount > 0 && (
             <span
               className="absolute -top-0.5 -right-0.5 w-4 h-4 text-[10px] font-bold text-white rounded-full flex items-center justify-center"
               style={{
@@ -105,10 +144,55 @@ export default function AdminTopbar({ onMenuToggle }: TopbarProps) {
                 animation: 'pulseRing 2s ease-in-out infinite',
               }}
             >
-              {notifications}
+              {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </button>
+
+        {showNotifications && (
+          <div className="absolute right-4 top-14 w-80 dark:bg-slate-900 bg-white border dark:border-white/10 border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[380px]">
+            <div className="px-5 py-4 border-b dark:border-white/5 border-slate-100 flex items-center justify-between dark:bg-white/[0.02] bg-slate-50">
+              <p className="text-xs font-black dark:text-white text-slate-900 uppercase tracking-widest">Admin Alerts</p>
+              {unreadCount > 0 && (
+                <button
+                  onClick={async () => {
+                    await api.markAllNotificationsAsRead();
+                    fetchNotifications();
+                  }}
+                  className="text-[10px] font-bold text-primary-500 hover:text-primary-600 transition-colors uppercase"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
+              {notificationList.length === 0 ? (
+                <div className="py-12 text-center text-slate-400">
+                  <Bell className="w-8 h-8 opacity-20 mx-auto mb-3" />
+                  <p className="text-xs">No notifications yet</p>
+                </div>
+              ) : (
+                notificationList.map((n) => (
+                  <div
+                    key={n._id}
+                    onClick={() => {
+                      if (!n.isRead) handleMarkRead(n._id);
+                      setShowNotifications(false);
+                    }}
+                    className={`px-5 py-4 border-b dark:border-white/5 border-slate-50 hover:dark:bg-white/5 hover:bg-slate-50 transition-colors cursor-pointer relative ${!n.isRead ? 'bg-primary-500/[0.02]' : ''}`}
+                  >
+                    {!n.isRead && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-500" />}
+                    <p className={`text-xs font-bold mb-1 ${!n.isRead ? 'text-white' : 'text-white/60'}`}>{n.title}</p>
+                    <p className="text-[11px] text-white/50 leading-relaxed mb-2 line-clamp-2">{n.message}</p>
+                    <p className="text-[9px] text-white/30 font-bold uppercase tracking-tighter">
+                      {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {!user && (
           <button
