@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import UserLayout from './UserLayout';
 import AdminLayout from './AdminLayout';
 
-const AUTH_PATHS = ['/admin/login', '/superadmin/login', '/citizen/login'];
+const AUTH_PATHS = ['/admin/login', '/superadmin/login', '/citizen/login', '/sub-department/login'];
 const PORTAL_PATHS = ['/', '/portal'];
 
 function isAuthPath(pathname: string) {
@@ -20,6 +20,7 @@ function isPortalPath(pathname: string) {
 function isAdminPath(pathname: string) {
   return (
     pathname.startsWith('/admin') ||
+    pathname.startsWith('/sub-department') ||
     pathname.startsWith('/superadmin') ||
     pathname.startsWith('/analytics') ||
     pathname.startsWith('/officer')
@@ -29,16 +30,9 @@ function isAdminPath(pathname: string) {
 function CitizenGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !user) {
-      const pending = localStorage.getItem('citizen_login_pending');
-      if (pending) {
-        const ageMs = Date.now() - Number(pending || 0);
-        if (ageMs < 8000) return;
-        localStorage.removeItem('citizen_login_pending');
-      }
       router.replace('/citizen/login');
     }
   }, [isLoading, user, router]);
@@ -51,17 +45,6 @@ function CitizenGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    const pending = localStorage.getItem('citizen_login_pending');
-    if (pending && Date.now() - Number(pending || 0) < 8000) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-transparent">
-          <div className="w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
-        </div>
-      );
-    }
-  }
-
   if (!user) return null;
 
   return <UserLayout>{children}</UserLayout>;
@@ -71,7 +54,6 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const isAdminUser = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
     if (isLoading) return;
@@ -81,13 +63,17 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!isAdminUser) {
+    if (user.role === 'PUBLIC') {
       router.replace('/citizen/login');
       return;
     }
 
     if (pathname.startsWith('/superadmin') && user.role !== 'SUPER_ADMIN') {
       router.replace('/admin');
+    }
+
+    if (pathname.startsWith('/admin') && (user.role === 'OFFICER' || user.isSubDepartment)) {
+      router.replace('/sub-department');
     }
   }, [isLoading, user, pathname, router]);
 
@@ -99,7 +85,13 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !isAdminUser) return null;
+  if (!user || user.role === 'PUBLIC') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return <AdminLayout>{children}</AdminLayout>;
 }

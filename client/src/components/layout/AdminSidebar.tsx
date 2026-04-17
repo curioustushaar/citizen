@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart3,
@@ -11,10 +11,19 @@ import {
   ChevronRight,
   Zap,
   Users,
+  FileText,
   LogIn,
   LogOut,
   User,
   Building2,
+  Activity,
+  Gauge,
+  Bell,
+  Brain,
+  MapPin,
+  MessageSquare,
+  ShieldCheck,
+  Tag,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -30,8 +39,11 @@ function getLoginPath(pathname: string) {
 
 export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, logout } = useAuth();
+
+  const adminSection = searchParams.get('section') || 'overview';
 
   const navItems = user?.role === 'SUPER_ADMIN'
     ? [
@@ -41,8 +53,22 @@ export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
         { label: 'Analytics', icon: BarChart3, href: '/superadmin/analytics' },
         { label: 'Officer Desk', icon: Users, href: '/superadmin/officer-desk' },
       ]
+    : user?.role === 'OFFICER'
+    ? [
+        { label: 'Dashboard', icon: LayoutDashboard, href: '/sub-department' },
+        { label: 'My Complaints', icon: FileText, href: '/sub-department' },
+      ]
     : [
-        { label: 'Admin Panel', icon: Shield, href: '/admin' },
+      { label: 'Dashboard', icon: LayoutDashboard, href: '/admin?section=dashboard', sectionKey: 'dashboard' },
+        { label: 'Complaint Control', icon: Users, href: '/admin?section=complaints', sectionKey: 'complaints' },
+        { label: 'Work Status', icon: Activity, href: '/admin?section=work-status', sectionKey: 'work-status' },
+        { label: 'Performance', icon: Gauge, href: '/admin?section=performance', sectionKey: 'performance' },
+        { label: 'Smart Alerts', icon: Bell, href: '/admin?section=alerts', sectionKey: 'alerts' },
+        { label: 'AI Assistance', icon: Brain, href: '/admin?section=ai', sectionKey: 'ai' },
+        { label: 'Location Control', icon: MapPin, href: '/admin?section=location', sectionKey: 'location' },
+        { label: 'Communication', icon: MessageSquare, href: '/admin?section=communication', sectionKey: 'communication' },
+        { label: 'Control Limits', icon: ShieldCheck, href: '/admin?section=controls', sectionKey: 'controls' },
+        { label: 'Sub-Departments', icon: Tag, href: '/admin?section=subdepartments', sectionKey: 'subdepartments' },
         { label: 'Analytics', icon: BarChart3, href: '/analytics' },
         { label: 'Officer Desk', icon: Users, href: '/officer' },
       ];
@@ -95,7 +121,10 @@ export default function AdminSidebar({ collapsed, onToggle }: SidebarProps) {
 
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = item.href === '/superadmin/controlroom'
+          const isSectionItem = !!(item as any).sectionKey;
+          const isActive = isSectionItem
+            ? pathname === '/admin' && adminSection === (item as any).sectionKey
+            : item.href === '/superadmin/controlroom'
             ? pathname === item.href || pathname === '/superadmin'
             : item.href === '/superadmin/adminpanel'
               ? pathname === item.href || pathname === '/admin'
