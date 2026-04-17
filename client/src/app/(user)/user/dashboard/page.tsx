@@ -9,6 +9,7 @@ import {
   Inbox, LogIn, Zap, Activity, Navigation, Bell
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 import { onEvent } from '@/lib/socket';
 import toast from 'react-hot-toast';
 
@@ -31,11 +32,8 @@ export default function CitizenDashboard() {
   const fetchComplaints = useCallback(async () => {
     if (!token) { setIsLoading(false); return; }
     try {
-      const res = await fetch('/api/complaints/my', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.success) setComplaints(data.data as Complaint[]);
+      const res = await api.getMyComplaints();
+      if (res.success) setComplaints(res.data as Complaint[]);
     } catch {
       // fail silently on dashboard
     } finally {

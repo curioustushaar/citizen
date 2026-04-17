@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { Clock, ArrowUpDown, Filter, User, Settings, X, Save, Search, UploadCloud } from 'lucide-react';
 import { PRIORITY_COLORS, STATUS_COLORS, CATEGORY_ICONS } from '@/lib/constants';
 import { api } from '@/lib/api';
@@ -12,13 +13,14 @@ interface Complaint {
   description: string;
   category: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'ESCALATED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'ESCALATED' | 'REJECTED';
   department: string;
   assignedOfficerName: string | null;
   assignedOfficer?: string;
   slaDeadline: string;
   location: { area: string; district: string };
   createdAt: string;
+  userName: string;
   _id?: string;
   lastRemark?: string;
   proofFileName?: string;
@@ -67,6 +69,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
   const [filter, setFilter] = useState<string>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<'createdAt' | 'priority'>('createdAt');
   const [localComplaints, setLocalComplaints] = useState<Complaint[]>([]);
   const [viewingComplaint, setViewingComplaint] = useState<Complaint | null>(null);
@@ -75,10 +78,11 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
   const [assigneeId, setAssigneeId] = useState('');
   const [remarks, setRemarks] = useState('');
   const [proofFileName, setProofFileName] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
   const now = useNow(60000);
 
   const getDisplayStatus = (c: Complaint) => {
-    const isOverdue = new Date(c.slaDeadline).getTime() < now && c.status !== 'RESOLVED';
+    const isOverdue = new Date(c.slaDeadline).getTime() < now && c.status !== 'RESOLVED' && c.status !== 'REJECTED';
     return isOverdue ? 'ESCALATED' : c.status;
   };
 
@@ -98,9 +102,26 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
+    const nowDate = new Date();
+    const startsAt = (() => {
+      if (dateFilter === 'TODAY') {
+        const d = new Date(nowDate);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      }
+      if (dateFilter === 'LAST_7_DAYS') {
+        return nowDate.getTime() - 7 * 24 * 60 * 60 * 1000;
+      }
+      if (dateFilter === 'LAST_30_DAYS') {
+        return nowDate.getTime() - 30 * 24 * 60 * 60 * 1000;
+      }
+      return null;
+    })();
+
     return localComplaints
       .filter((c) => filter === 'ALL' || getDisplayStatus(c) === filter)
       .filter((c) => priorityFilter === 'ALL' || c.priority === priorityFilter)
+      .filter((c) => (startsAt === null ? true : new Date(c.createdAt).getTime() >= startsAt))
       .filter((c) => {
         if (!term) return true;
         const hay = [
@@ -110,6 +131,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
           c.location?.area,
           c.location?.district,
           c.assignedOfficerName,
+          c.userName,
         ]
           .filter(Boolean)
           .join(' ')
@@ -123,10 +145,16 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
         }
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
-  }, [filter, now, priorityFilter, localComplaints, searchTerm, sortBy]);
+  }, [dateFilter, filter, now, priorityFilter, localComplaints, searchTerm, sortBy]);
 
-  const filters = ['ALL', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'ESCALATED'];
+  const filters = ['ALL', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'ESCALATED', 'REJECTED'];
   const priorityOptions = ['ALL', 'HIGH', 'MEDIUM', 'LOW'];
+  const dateOptions = [
+    { value: 'ALL', label: 'All Dates' },
+    { value: 'TODAY', label: 'Today' },
+    { value: 'LAST_7_DAYS', label: 'Last 7 Days' },
+    { value: 'LAST_30_DAYS', label: 'Last 30 Days' },
+  ];
   const officerOptions = officers.map((o) => ({ id: o.id, name: o.name }));
 
   const handleAccept = async (target: Complaint) => {
@@ -195,6 +223,26 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
     setIsUpdating(false);
   };
 
+  const handleReject = async (target: Complaint) => {
+    const reason = rejectReason.trim();
+    if (!reason) {
+      toast.error('Rejection reason is required');
+      return;
+    }
+    const id = target._id || target.complaintId;
+    const res = await api.rejectAdminComplaint(id.toString(), reason);
+    if (!res.success) {
+      toast.error(res.message || 'Failed to reject complaint');
+      return;
+    }
+    setLocalComplaints((prev) =>
+      prev.map((c) => ((c._id || c.complaintId) === id ? { ...c, ...(res.data as any), status: 'REJECTED' } : c))
+    );
+    setViewingComplaint(null);
+    setRejectReason('');
+    toast.success('Complaint rejected with reason');
+  };
+
   return (
     <div className="glass-card overflow-hidden relative">
       {/* Toolbar */}
@@ -221,11 +269,27 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
+              aria-label="Filter complaints by priority"
               className="input-field py-1 text-xs h-8"
             >
               {priorityOptions.map((p) => (
                 <option key={p} value={p}>
                   {p === 'ALL' ? 'All' : p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-widest text-white/30">Date</span>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              aria-label="Filter complaints by date"
+              className="input-field py-1 text-xs h-8"
+            >
+              {dateOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -256,7 +320,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5">
-              {['ID', 'Category', 'Location', 'Priority', 'Status', 'Officer', 'SLA', 'Actions'].map(
+              {['ID', 'Category', 'User', 'Location', 'Priority', 'Status', 'Officer', 'Date/Time', 'SLA', 'Actions'].map(
                 (h) => (
                   <th
                     key={h}
@@ -307,6 +371,12 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                     </div>
                   </td>
                   <td className="px-4 py-3">
+                    <span className="text-xs text-white/60 flex items-center gap-1">
+                      <User className="w-3 h-3 text-white/40" />
+                      {c.userName || 'Anonymous'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <span className="text-xs text-white/50">{c.location.area}</span>
                   </td>
                   <td className="px-4 py-3">
@@ -332,6 +402,17 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                     </span>
                   </td>
                   <td className="px-4 py-3">
+                    <span className="text-xs text-white/40 font-mono">
+                      {new Date(c.createdAt).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3 h-3 text-white/20" />
                       <SLABadge deadline={c.slaDeadline} now={now} />
@@ -348,6 +429,18 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                           className="px-2 py-1 text-[10px] rounded-md bg-primary-500/20 text-primary-300 border border-primary-500/30"
                         >
                           Accept
+                        </button>
+                      )}
+                      {c.status === 'PENDING' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewingComplaint(c);
+                            setRejectReason('Wrong department or duplicate complaint');
+                          }}
+                          className="px-2 py-1 text-[10px] rounded-md bg-slate-500/20 text-slate-200 border border-slate-400/30"
+                        >
+                          Reject
                         </button>
                       )}
                       <button
@@ -378,20 +471,21 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
         )}
       </div>
 
-      {viewingComplaint && (
-        <div className="fixed inset-0 z-[120]">
+      {viewingComplaint && createPortal(
+        <div className="fixed inset-0 z-[220] overflow-y-auto">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setViewingComplaint(null)}
           />
+          <div className="relative min-h-full flex items-start justify-center pt-2 sm:pt-4 pb-4 px-2 sm:px-4">
           <motion.div
-            initial={{ x: 420, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 420, opacity: 0 }}
+            initial={{ y: -50, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -50, opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-            className="absolute right-0 top-0 h-full w-full max-w-[480px] bg-slate-950/90 border-l border-white/10 shadow-2xl"
+            className="relative w-full max-w-2xl bg-slate-950/95 border border-white/10 shadow-2xl rounded-2xl max-h-[calc(100dvh-1rem)] overflow-y-auto"
           >
-            <div className="h-full overflow-y-auto p-6">
+            <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
@@ -405,13 +499,34 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                   <h2 className="text-xl font-bold text-white leading-tight">
                     {viewingComplaint.description}
                   </h2>
-                  <p className="text-xs text-white/50 mt-1 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Reported: {new Date(viewingComplaint.createdAt).toLocaleString()}
-                  </p>
                 </div>
-                <button onClick={() => setViewingComplaint(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+                <button aria-label="Close complaint details" onClick={() => setViewingComplaint(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors flex-shrink-0">
                   <X className="w-5 h-5 text-white/60" />
                 </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Reported By</p>
+                  <p className="text-sm text-white font-medium flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-primary-400" />
+                    {viewingComplaint.userName || 'Anonymous'}
+                  </p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-xl border border-white/10">
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-1">Reported At</p>
+                  <p className="text-sm text-white font-medium flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-primary-400" />
+                    {new Date(viewingComplaint.createdAt).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: '2-digit',
+                    })} {new Date(viewingComplaint.createdAt).toLocaleTimeString('en-IN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -439,6 +554,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                       <select
                         value={assigneeId}
                         onChange={(e) => setAssigneeId(e.target.value)}
+                        aria-label="Assign complaint to officer"
                         className="input-field pl-9 py-2 text-sm"
                       >
                         <option value="">Select officer</option>
@@ -453,6 +569,7 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                     <select
                       value={updateStatus}
                       onChange={(e) => setUpdateStatus(e.target.value)}
+                      aria-label="Update complaint status"
                       className="input-field py-2 text-sm"
                     >
                       <option value="PENDING">Pending (Unassigned)</option>
@@ -473,6 +590,18 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
                   />
                 </div>
 
+                {viewingComplaint.status === 'PENDING' && (
+                  <div>
+                    <label className="block text-xs text-white/60 mb-1">Reject Reason (mandatory for reject)</label>
+                    <textarea
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      placeholder="e.g. wrong department, duplicate complaint"
+                      className="input-field text-sm min-h-[68px]"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-xs text-white/60 mb-1">Upload Proof</label>
                   <label className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 text-xs text-white/60">
@@ -488,12 +617,20 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
 
                 <div className="pt-2">
                   {viewingComplaint.status === 'PENDING' && (
-                    <button
-                      onClick={() => handleAccept(viewingComplaint)}
-                      className="w-full mb-3 px-4 py-2.5 rounded-xl border border-primary-500/40 text-primary-300 bg-primary-500/10 hover:bg-primary-500/20 transition-colors"
-                    >
-                      Accept Complaint (Start Work)
-                    </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      <button
+                        onClick={() => handleAccept(viewingComplaint)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-primary-500/40 text-primary-300 bg-primary-500/10 hover:bg-primary-500/20 transition-colors"
+                      >
+                        Accept Complaint
+                      </button>
+                      <button
+                        onClick={() => handleReject(viewingComplaint)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-400/40 text-slate-200 bg-slate-500/10 hover:bg-slate-500/20 transition-colors"
+                      >
+                        Reject with Reason
+                      </button>
+                    </div>
                   )}
                   <button
                     onClick={handleUpdate}
@@ -507,7 +644,9 @@ export default function ComplaintTable({ complaints, officers = [] }: { complain
               </div>
             </div>
           </motion.div>
-        </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

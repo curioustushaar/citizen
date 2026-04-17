@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { Shield, Users, FileText, PlusCircle, PencilLine, Trash2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Shield, Users, PlusCircle, PencilLine, Trash2, MapPin, Tag, AlertCircle, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/lib/auth';
+import { onEvent } from '@/lib/socket';
 import ComplaintTable from '@/components/admin/ComplaintTable';
+import AdminAdvancedSections, { type AdvancedSectionKey } from '@/components/admin/AdminAdvancedSections';
 import { api } from '@/lib/api';
 
 export default function AdminPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, token } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'complaints' | 'subdepartments'>('complaints');
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isLoading) {
@@ -22,7 +24,10 @@ export default function AdminPage() {
   }, [user, isLoading, router]);
 
   const [complaints, setComplaints] = useState<any[]>([]);
+  const [officers, setOfficers] = useState<any[]>([]);
   const [subDepartments, setSubDepartments] = useState<any[]>([]);
+  const [departmentInfo, setDepartmentInfo] = useState<any>(null);
+  const [departmentCategories, setDepartmentCategories] = useState<string[]>([]);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showEditMember, setShowEditMember] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
@@ -35,7 +40,38 @@ export default function AdminPage() {
     state: '',
     governmentId: '',
   });
-  const departmentName = user?.department || 'Department';
+  const hasShownInitialPopup = useRef(false);
+
+  const showComplaintPopup = (data: any, title = 'New Complaint') => {
+    toast.custom((t) => (
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: -20, opacity: 0 }}
+        className="glass-card p-4 border border-primary-500/30 bg-primary-500/10 flex items-start gap-3 max-w-md"
+      >
+        <Bell className="w-5 h-5 text-primary-400 flex-shrink-0 mt-1" />
+        <div className="flex-1">
+          <p className="font-semibold text-primary-300 mb-1">{title}</p>
+          <p className="text-sm text-white/70 mb-2">
+            <span className="font-mono text-primary-400">#{(data?.complaintId || '').toString().slice(-6)}</span>
+            {data?.category ? ` - ${data.category}` : ''}
+          </p>
+          <p className="text-xs text-white/60">
+            📍 {data?.location?.area || data?.location || 'Unknown area'}
+            {data?.userName ? ` | 👤 ${data.userName}` : ''}
+          </p>
+        </div>
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          className="text-white/40 hover:text-white/60"
+          aria-label="Close notification"
+        >
+          ✕
+        </button>
+      </motion.div>
+    ), { duration: 6000, position: 'top-right' });
+  };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,24 +137,105 @@ export default function AdminPage() {
     setSubDepartments((prev) => prev.filter((d) => d._id !== id));
     toast.success('Sub-department deactivated');
   };
+
+  const handleInlineStatusChange = async (complaintId: string, status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED') => {
+    const res = await api.updateAdminComplaintStatus(complaintId, status, `Status updated from Work Status panel: ${status}`);
+    if (!res.success) {
+      toast.error(res.message || res.error || 'Failed to update status');
+      return;
+    }
+
+    setComplaints((prev) =>
+      prev.map((c) => {
+        const cid = c?.complaintId || c?._id;
+        if (cid !== complaintId) return c;
+        return {
+          ...c,
+          status,
+          resolvedAt: status === 'RESOLVED' ? new Date().toISOString() : c.resolvedAt,
+        };
+      })
+    );
+
+    toast.success(`Complaint moved to ${status.replace('_', ' ')}`);
+  };
+
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [compRes, subRes] = await Promise.all([
+      const [compRes, subRes, deptRes, officersRes] = await Promise.all([
         api.getAdminComplaints(),
         api.getSubDepartments(),
+        api.fetchApi<any>('/admin/department'),
+        api.getAdminOfficers(),
       ]);
 
-      if (compRes.success) setComplaints(compRes.data as any[]);
+      if (compRes.success) {
+        const complaintList = compRes.data as any[];
+        setComplaints(complaintList);
+
+        // Show popup as soon as admin panel opens (latest complaint alert).
+        if (!hasShownInitialPopup.current && complaintList.length > 0) {
+          showComplaintPopup(complaintList[0], 'Latest Complaint Alert');
+          hasShownInitialPopup.current = true;
+        }
+      }
       if (subRes.success) setSubDepartments(subRes.data as any[]);
+      if (officersRes.success) {
+        const normalizedOfficers = (officersRes.data as any[]).map((o: any) => ({
+          id: o._id || o.id,
+          name: o.name,
+          department: o.department,
+        }));
+        setOfficers(normalizedOfficers);
+      }
+      
+      // Fetch full department info from API
+      if (deptRes.success && deptRes.data) {
+        setDepartmentInfo(deptRes.data);
+        if (deptRes.data.categories) {
+          setDepartmentCategories(Array.isArray(deptRes.data.categories) ? deptRes.data.categories : []);
+        }
+      } else {
+        // Fallback to user data
+        setDepartmentInfo({
+          name: user.department,
+          departmentId: user.departmentId,
+        });
+      }
     };
     fetchData();
   }, [user]);
 
-  const tabs = [
-    { key: 'complaints' as const, label: 'Complaints', icon: FileText, count: complaints.length },
-    { key: 'subdepartments' as const, label: 'Sub-Departments', icon: Shield, count: subDepartments.length },
-  ];
+  // Listen for real-time complaint notifications
+  useEffect(() => {
+    if (!token || !user) return;
+
+    const departmentMatches = (incomingDept?: string) => {
+      const currentDept = (departmentInfo?.name || user.department || '').toString().trim().toLowerCase();
+      return incomingDept?.toString().trim().toLowerCase() === currentDept;
+    };
+
+    const onIncomingComplaint = (data: any) => {
+      // Only show notification if complaint is for this department
+      if (departmentMatches(data.department)) {
+        showComplaintPopup(data, '🔔 New Complaint');
+
+        // Refresh complaints list
+        api.getAdminComplaints().then(res => {
+          if (res.success) setComplaints(res.data as any[]);
+        });
+      }
+    };
+
+    const unsubscribeNew = onEvent('new_complaint', onIncomingComplaint, token);
+    const unsubscribeCreated = onEvent('complaint_created', onIncomingComplaint, token);
+
+    return () => {
+      unsubscribeNew?.();
+      unsubscribeCreated?.();
+    };
+  }, [token, user, departmentInfo]);
 
   const complaintStats = complaints.reduce(
     (acc: any, c: any) => {
@@ -130,85 +247,113 @@ export default function AdminPage() {
     { total: 0, PENDING: 0, IN_PROGRESS: 0, RESOLVED: 0, ESCALATED: 0 }
   );
 
+  const outOfScopeCount = complaints.filter(
+    (c) => c.category && departmentCategories.length > 0 && !departmentCategories.includes(c.category)
+  ).length;
+
+  const validSections = [
+    'dashboard',
+    'complaints',
+    'subdepartments',
+    'work-status',
+    'performance',
+    'alerts',
+    'ai',
+    'location',
+    'communication',
+    'controls',
+  ] as const;
+
+  const sectionParam = (searchParams.get('section') || 'dashboard') as (typeof validSections)[number];
+  const activeSection: 'dashboard' | 'complaints' | 'subdepartments' | AdvancedSectionKey =
+    validSections.includes(sectionParam) ? (sectionParam as any) : 'dashboard';
+
   if (isLoading || !user || user.role === 'PUBLIC') return null;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="w-5 h-5 text-primary-400" />
-            <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Admin Control Room</h1>
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-6 h-6 text-primary-400" />
+            <h1 className="text-3xl font-bold text-white uppercase tracking-tight">Admin Control Room</h1>
           </div>
-          <p className="text-sm text-white/40">
-            {departmentName} Management Panel
-          </p>
+          <p className="text-sm text-white/60 mb-4">Management Panel</p>
+          
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[{
-          label: 'Pending',
-          value: complaintStats.PENDING,
-          cls: 'border-warning-500/30 bg-warning-500/5 text-warning-400',
-        }, {
-          label: 'In Progress',
-          value: complaintStats.IN_PROGRESS,
-          cls: 'border-primary-500/30 bg-primary-500/5 text-primary-400',
-        }, {
-          label: 'Resolved',
-          value: complaintStats.RESOLVED,
-          cls: 'border-success-500/30 bg-success-500/5 text-success-400',
-        }, {
-          label: 'Escalated',
-          value: complaintStats.ESCALATED,
-          cls: 'border-danger-500/30 bg-danger-500/5 text-danger-400',
-        }].map((s) => (
-          <div key={s.label} className={`glass-card p-3 border ${s.cls}`}>
-            <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">{s.label}</p>
-            <p className="text-2xl font-black mt-1">{s.value}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-2 flex-wrap border-b border-white/5 pb-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                activeTab === tab.key
-                  ? 'bg-primary-500/15 text-white border border-primary-500/20 shadow-lg shadow-primary-500/5'
-                  : 'text-white/40 hover:text-white/60 hover:bg-white/5'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-              {tab.key !== 'settings' && (
-                <span
-                  className={`ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${
-                    activeTab === tab.key
-                      ? 'bg-primary-500/20 text-primary-400'
-                      : 'bg-white/5 text-white/30'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
       <div className="min-h-[60vh]">
-        {activeTab === 'complaints' ? (
-          <ComplaintTable
-            complaints={complaints}
-            officers={[]}
-          />
-        ) : (
+          {activeSection === 'dashboard' && (
+            <div className="space-y-4">
+              <div className="glass-card p-4 border border-primary-500/20 bg-primary-500/5">
+                <h2 className="text-lg font-bold text-white">Dashboard Summary</h2>
+                <p className="text-xs text-white/60 mt-1">Department overview, out-of-scope warnings, and complaint status totals.</p>
+              </div>
+
+              <div className="glass-card p-4 border border-primary-500/20 bg-primary-500/5 max-w-xl">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary-400" />
+                    <span className="text-xs uppercase tracking-widest text-white/60">Department</span>
+                  </div>
+                  <p className="text-lg font-bold text-white">{user?.department || 'Loading...'}</p>
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="w-4 h-4 text-primary-400" />
+                      <span className="text-xs uppercase tracking-widest text-white/60">Assigned Categories</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {departmentCategories.length > 0 ? (
+                        departmentCategories.slice(0, 8).map((cat) => (
+                          <span key={cat} className="text-xs bg-primary-500/20 text-primary-300 px-2.5 py-1 rounded-lg border border-primary-500/30">
+                            {cat}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-white/40 italic">No categories assigned</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {outOfScopeCount > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card p-4 border border-warning-500/20 bg-warning-500/5 flex items-start gap-3"
+                >
+                  <AlertCircle className="w-5 h-5 text-warning-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-warning-300">Out-of-Scope Complaints Detected</p>
+                    <p className="text-xs text-white/60 mt-1">
+                      {outOfScopeCount} complaints received with categories not assigned to your department. These should be escalated to the appropriate department.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Pending', value: complaintStats.PENDING, cls: 'border-warning-500/30 bg-warning-500/5 text-warning-400' },
+                  { label: 'In Progress', value: complaintStats.IN_PROGRESS, cls: 'border-primary-500/30 bg-primary-500/5 text-primary-400' },
+                  { label: 'Resolved', value: complaintStats.RESOLVED, cls: 'border-success-500/30 bg-success-500/5 text-success-400' },
+                  { label: 'Escalated', value: complaintStats.ESCALATED, cls: 'border-danger-500/30 bg-danger-500/5 text-danger-400' },
+                ].map((s) => (
+                  <div key={s.label} className={`glass-card p-3 border ${s.cls}`}>
+                    <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">{s.label}</p>
+                    <p className="text-2xl font-black mt-1">{s.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'complaints' && <ComplaintTable complaints={complaints} officers={officers} />}
+
+          {activeSection === 'subdepartments' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
               <h2 className="text-xl font-bold text-white">Sub-Departments</h2>
@@ -289,7 +434,15 @@ export default function AdminPage() {
               ))}
             </div>
           </div>
-        )}
+          )}
+
+          {['work-status', 'performance', 'alerts', 'ai', 'location', 'communication', 'controls'].includes(activeSection) && (
+            <AdminAdvancedSections
+              complaints={complaints}
+              focusSection={activeSection as AdvancedSectionKey}
+              onInlineStatusChange={handleInlineStatusChange}
+            />
+          )}
       </div>
 
       {showAddMember && (
@@ -406,6 +559,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingMember.name || ''}
                     onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
+                    aria-label="Sub-department name"
                     className="input-field text-sm"
                     required
                   />
@@ -416,6 +570,7 @@ export default function AdminPage() {
                     type="email"
                     value={editingMember.contactEmail || ''}
                     onChange={(e) => setEditingMember({ ...editingMember, contactEmail: e.target.value })}
+                    aria-label="Official email"
                     className="input-field text-sm"
                   />
                 </div>
@@ -427,6 +582,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingMember.address || ''}
                     onChange={(e) => setEditingMember({ ...editingMember, address: e.target.value })}
+                    aria-label="Department address"
                     className="input-field text-sm"
                   />
                 </div>
@@ -436,6 +592,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingMember.pincode || ''}
                     onChange={(e) => setEditingMember({ ...editingMember, pincode: e.target.value })}
+                    aria-label="Pincode"
                     className="input-field text-sm"
                   />
                 </div>
@@ -447,6 +604,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingMember.state || ''}
                     onChange={(e) => setEditingMember({ ...editingMember, state: e.target.value })}
+                    aria-label="State"
                     className="input-field text-sm"
                   />
                 </div>
@@ -456,6 +614,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingMember.governmentId || ''}
                     onChange={(e) => setEditingMember({ ...editingMember, governmentId: e.target.value })}
+                    aria-label="Government ID"
                     className="input-field text-sm"
                   />
                 </div>

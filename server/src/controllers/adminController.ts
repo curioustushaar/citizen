@@ -5,8 +5,23 @@ import User from '../models/User';
 import Officer from '../models/Officer';
 import Complaint from '../models/Complaint';
 import AuditLog from '../models/AuditLog';
+import Notification from '../models/Notification';
 import { AuthRequest } from '../middleware/auth';
 import mongoose from 'mongoose';
+import { emitToUser } from '../socket';
+
+const notifyUser = async (userId: string | undefined, payload: { title: string; message: string; type: 'ASSIGNMENT' | 'STATUS_UPDATE' | 'CRISIS' | 'ESCALATION' | 'GENERAL'; relatedId?: string }) => {
+  if (!userId) return;
+  await Notification.create({
+    userId,
+    title: payload.title,
+    message: payload.message,
+    type: payload.type,
+    relatedId: payload.relatedId,
+  });
+
+  emitToUser(userId, 'complaint_notification', payload);
+};
 
 const buildDeptScope = async (req: AuthRequest) => {
   if (!req.user) return null;
@@ -45,10 +60,17 @@ const buildDeptScope = async (req: AuthRequest) => {
   return null;
 };
 
-const findComplaintByParam = async (id: string, deptIds: any[]) => {
-  const byComplaintId = await Complaint.findOne({ complaintId: id, departmentId: { $in: deptIds } });
+const findComplaintByParam = async (id: string, deptIds: any[], deptName: string) => {
+  const scopedMatch = {
+    $or: [
+      { departmentId: { $in: deptIds } },
+      { department: deptName },
+    ],
+  } as any;
+
+  const byComplaintId = await Complaint.findOne({ complaintId: id, ...scopedMatch });
   if (byComplaintId) return byComplaintId;
-  return Complaint.findOne({ _id: id, departmentId: { $in: deptIds } });
+  return Complaint.findOne({ _id: id, ...scopedMatch });
 };
 
 const getParamId = (param: string | string[]) => (Array.isArray(param) ? param[0] : param);
@@ -337,7 +359,13 @@ export const getAdminComplaints = async (req: AuthRequest, res: Response) => {
     const scope = await buildDeptScope(req);
     if (!scope) return res.status(403).json({ success: false, error: 'Department scope not found' });
 
-    const query: any = { departmentId: { $in: scope.deptIds } };
+    // Build base query: match by departmentId OR by department name
+    const query: any = {
+      $or: [
+        { departmentId: { $in: scope.deptIds } },
+        { department: scope.dept.name },
+      ],
+    };
 
     if (typeof req.query.status === 'string' && req.query.status.trim()) {
       query.status = req.query.status.trim();
@@ -345,17 +373,88 @@ export const getAdminComplaints = async (req: AuthRequest, res: Response) => {
     if (typeof req.query.priority === 'string' && req.query.priority.trim()) {
       query.priority = req.query.priority.trim();
     }
+    if (typeof req.query.area === 'string' && req.query.area.trim()) {
+      query['location.area'] = { $regex: req.query.area.trim(), $options: 'i' };
+    }
+    if (typeof req.query.fromDate === 'string' && req.query.fromDate.trim()) {
+      const from = new Date(req.query.fromDate);
+      if (!Number.isNaN(from.getTime())) {
+        query.createdAt = { ...(query.createdAt || {}), $gte: from };
+      }
+    }
+    if (typeof req.query.toDate === 'string' && req.query.toDate.trim()) {
+      const to = new Date(req.query.toDate);
+      if (!Number.isNaN(to.getTime())) {
+        to.setHours(23, 59, 59, 999);
+        query.createdAt = { ...(query.createdAt || {}), $lte: to };
+      }
+    }
     if (typeof req.query.search === 'string' && req.query.search.trim()) {
       const term = req.query.search.trim();
-      query.$or = [
-        { complaintId: { $regex: term, $options: 'i' } },
-        { description: { $regex: term, $options: 'i' } },
-        { category: { $regex: term, $options: 'i' } },
-      ];
+      query.$and = (query.$and || []);
+      query.$and.push({
+        $or: [
+          { complaintId: { $regex: term, $options: 'i' } },
+          { description: { $regex: term, $options: 'i' } },
+          { category: { $regex: term, $options: 'i' } },
+        ],
+      });
     }
 
     const complaints = await Complaint.find(query).sort({ createdAt: -1 });
     res.json({ success: true, data: complaints });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// PATCH /api/admin/complaints/:id/reject
+export const rejectComplaint = async (req: AuthRequest, res: Response) => {
+  try {
+    const scope = await buildDeptScope(req);
+    if (!scope) return res.status(403).json({ success: false, error: 'Department scope not found' });
+
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+    if (!reason) return res.status(400).json({ success: false, error: 'reason is required' });
+
+    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds, scope.dept.name);
+    if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
+
+    if (complaint.assignedOfficer && complaint.assignedOfficer !== 'Unassigned') {
+      await Officer.findByIdAndUpdate(complaint.assignedOfficer, { $inc: { pendingCount: -1 } });
+    }
+
+    complaint.status = 'REJECTED';
+    complaint.rejectedAt = new Date();
+    complaint.rejectionReason = reason;
+    complaint.rejectedBy = req.user?.name || 'Admin';
+    complaint.notes.push({
+      text: `Rejected: ${reason}`,
+      addedBy: req.user?.name || 'Admin',
+      addedAt: new Date(),
+      attachment: null,
+    });
+
+    await complaint.save();
+
+    await notifyUser(complaint.userId, {
+      title: 'Complaint Rejected',
+      message: `Complaint #${complaint.complaintId} was rejected. Reason: ${reason}`,
+      type: 'STATUS_UPDATE',
+      relatedId: complaint.complaintId,
+    });
+
+    await AuditLog.create({
+      action: 'REJECT_COMPLAINT',
+      performedBy: req.user!.userId,
+      performedByName: req.user!.name,
+      role: req.user!.role,
+      targetType: 'complaint',
+      targetId: complaint.complaintId,
+      details: `Rejected complaint. Reason: ${reason}`,
+    });
+
+    res.json({ success: true, data: complaint });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -367,11 +466,18 @@ export const acceptComplaint = async (req: AuthRequest, res: Response) => {
     const scope = await buildDeptScope(req);
     if (!scope) return res.status(403).json({ success: false, error: 'Department scope not found' });
 
-    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds);
+    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds, scope.dept.name);
     if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
 
     complaint.status = 'IN_PROGRESS';
     await complaint.save();
+
+    await notifyUser(complaint.userId, {
+      title: 'Work Started',
+      message: `Complaint #${complaint.complaintId} is now IN_PROGRESS. Team has started work.`,
+      type: 'STATUS_UPDATE',
+      relatedId: complaint.complaintId,
+    });
 
     await AuditLog.create({
       action: 'ACCEPT_COMPLAINT',
@@ -398,7 +504,7 @@ export const assignComplaint = async (req: AuthRequest, res: Response) => {
     const { officerId } = req.body;
     if (!officerId) return res.status(400).json({ success: false, error: 'officerId is required' });
 
-    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds);
+    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds, scope.dept.name);
     if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
 
     const officer = await Officer.findOne({ _id: officerId, departmentId: { $in: scope.deptIds } });
@@ -417,6 +523,20 @@ export const assignComplaint = async (req: AuthRequest, res: Response) => {
     await complaint.save();
 
     await Officer.findByIdAndUpdate(officer._id, { $inc: { pendingCount: 1 } });
+
+    await notifyUser(complaint.userId, {
+      title: 'Officer Assigned',
+      message: `Complaint #${complaint.complaintId} assigned to ${officer.name}.`,
+      type: 'ASSIGNMENT',
+      relatedId: complaint.complaintId,
+    });
+
+    await notifyUser(officer.userId ? officer.userId.toString() : undefined, {
+      title: 'New Assignment',
+      message: `You have been assigned complaint #${complaint.complaintId}.`,
+      type: 'ASSIGNMENT',
+      relatedId: complaint.complaintId,
+    });
 
     await AuditLog.create({
       action: 'ASSIGN_COMPLAINT',
@@ -443,7 +563,7 @@ export const updateComplaintStatus = async (req: AuthRequest, res: Response) => 
     const { status, remarks } = req.body;
     if (!status) return res.status(400).json({ success: false, error: 'status is required' });
 
-    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds);
+    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds, scope.dept.name);
     if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
 
     complaint.status = status;
@@ -452,6 +572,18 @@ export const updateComplaintStatus = async (req: AuthRequest, res: Response) => 
       if (complaint.assignedOfficer && complaint.assignedOfficer !== 'Unassigned') {
         await Officer.findByIdAndUpdate(complaint.assignedOfficer, {
           $inc: { pendingCount: -1, resolvedCount: 1 },
+        });
+      }
+    }
+
+    if (status === 'ESCALATED') {
+      const superAdmins = await User.find({ role: 'SUPER_ADMIN', isActive: true }).select('_id');
+      for (const sa of superAdmins) {
+        await notifyUser(sa._id.toString(), {
+          title: 'Manual Escalation',
+          message: `Complaint #${complaint.complaintId} manually escalated by admin.`,
+          type: 'ESCALATION',
+          relatedId: complaint.complaintId,
         });
       }
     }
@@ -466,6 +598,24 @@ export const updateComplaintStatus = async (req: AuthRequest, res: Response) => 
     }
 
     await complaint.save();
+
+    if (status === 'IN_PROGRESS') {
+      await notifyUser(complaint.userId, {
+        title: 'Work In Progress',
+        message: `Complaint #${complaint.complaintId} is in progress.`,
+        type: 'STATUS_UPDATE',
+        relatedId: complaint.complaintId,
+      });
+    }
+
+    if (status === 'RESOLVED') {
+      await notifyUser(complaint.userId, {
+        title: 'Complaint Resolved',
+        message: `Complaint #${complaint.complaintId} has been marked RESOLVED.`,
+        type: 'STATUS_UPDATE',
+        relatedId: complaint.complaintId,
+      });
+    }
 
     await AuditLog.create({
       action: 'UPDATE_STATUS',
@@ -492,7 +642,7 @@ export const addComplaintRemark = async (req: AuthRequest, res: Response) => {
     const { text } = req.body;
     if (!text) return res.status(400).json({ success: false, error: 'text is required' });
 
-    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds);
+    const complaint = await findComplaintByParam(getParamId(req.params.id), scope.deptIds, scope.dept.name);
     if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
 
     complaint.notes.push({

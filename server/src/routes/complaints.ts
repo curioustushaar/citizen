@@ -7,6 +7,7 @@ import express from 'express';
 import Complaint from '../models/Complaint';
 import Notification from '../models/Notification';
 import Department from '../models/Department';
+import User from '../models/User';
 import { detectCategory, detectPriority, getDepartment, calculateSLA, generateTags, generateComplaintId } from '../services/aiEngine';
 import { emitEvent, emitToDepartment, emitToUser } from '../socket';
 
@@ -181,6 +182,42 @@ router.post(
         },
         status: 'PENDING',
       });
+
+      // Build admin recipients for this department so bell notifications are not static.
+      const deptAdmins = await User.find({
+        role: 'ADMIN',
+        isActive: true,
+        $or: [
+          ...(departmentId ? [{ departmentId }] : []),
+          { department: { $regex: new RegExp(`^${department}$`, 'i') } },
+        ],
+      }).select('_id');
+
+      const adminIds = new Set<string>(deptAdmins.map((a) => a._id.toString()));
+      if (deptDoc?.adminUserId) {
+        adminIds.add(deptDoc.adminUserId.toString());
+      }
+
+      const adminNotificationPayload = {
+        title: 'New Complaint Assigned',
+        message: `#${complaint.complaintId} (${complaint.category}) reported in ${area || 'Unknown area'}`,
+        type: 'GENERAL' as const,
+        relatedId: complaint.complaintId,
+      };
+
+      if (adminIds.size > 0) {
+        await Notification.insertMany(
+          Array.from(adminIds).map((adminId) => ({
+            userId: adminId,
+            ...adminNotificationPayload,
+          }))
+        );
+
+        for (const adminId of adminIds) {
+          emitToUser(adminId, 'complaint_notification', adminNotificationPayload);
+          emitToUser(adminId, 'complaint_created', complaint);
+        }
+      }
 
       // Emit real-time updates
       emitToDepartment(complaint.department, 'complaint_created', complaint);
