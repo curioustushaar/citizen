@@ -9,6 +9,9 @@ import departmentRoutes from './departments';
 import slaRoutes from './sla';
 import auditRoutes from './audit';
 import simulateRoutes from './simulate';
+import adminRoutes from './admin';
+import superadminRoutes from './superadmin';
+import officerComplaintRoutes from './officer-complaints';
 
 const router = Router();
 
@@ -22,5 +25,8 @@ router.use('/departments', departmentRoutes);
 router.use('/sla', slaRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/simulate', simulateRoutes);
+router.use('/admin', adminRoutes);
+router.use('/superadmin', superadminRoutes);
+router.use('/officer', officerComplaintRoutes);
 
 export default router;

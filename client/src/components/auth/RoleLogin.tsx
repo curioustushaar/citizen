@@ -6,25 +6,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, LogIn, Eye, EyeOff, ShieldCheck, Users, UserCircle2, User, Phone } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
-type RoleType = 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN';
+type RoleType = 'PUBLIC' | 'ADMIN' | 'SUPER_ADMIN' | 'OFFICER';
+type PortalGuard = 'HEAD_ADMIN' | 'SUB_DEPARTMENT' | 'ANY_ADMIN';
 
 interface RoleLoginProps {
   role: RoleType;
   title: string;
   subtitle: string;
   redirectTo: string;
-  allowDemo?: boolean;
+  portalGuard?: PortalGuard;
 }
 
 const roleMeta: Record<RoleType, { icon: any; label: string }> = {
   PUBLIC: { icon: UserCircle2, label: 'Citizen' },
   ADMIN: { icon: Users, label: 'Admin' },
   SUPER_ADMIN: { icon: ShieldCheck, label: 'Superadmin' },
+  OFFICER: { icon: Users, label: 'Officer' },
 };
 
-export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo = true }: RoleLoginProps) {
+export default function RoleLogin({ role, title, subtitle, redirectTo, portalGuard = 'ANY_ADMIN' }: RoleLoginProps) {
   const router = useRouter();
-  const { login, demoLogin, register } = useAuth();
+  const { login, register, logout } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -52,14 +54,26 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
     setLoading(true);
     setError('');
 
-    const ok = await login(email, password, role);
-    if (ok) {
+    const result = await login(email, password, role);
+    if (result.ok) {
+      const isSubDepartment = result.user?.isSubDepartment;
+      if (portalGuard === 'SUB_DEPARTMENT' && !isSubDepartment) {
+        logout();
+        setError('Use the Head Admin login. This account is not a sub-department admin.');
+        setLoading(false);
+        return;
+      }
+      if (portalGuard === 'HEAD_ADMIN' && isSubDepartment) {
+        logout();
+        setError('Use Sub-Department login for this account.');
+        setLoading(false);
+        return;
+      }
       router.push(redirectTo);
     } else {
-      const stored = localStorage.getItem('grievance_user_auth_error_role');
-      if (stored) {
+      if (result.errorRole) {
+        const stored = result.errorRole;
         setError(`This account is registered as ${stored}. Please use the ${stored === 'SUPER_ADMIN' ? 'Superadmin' : stored === 'ADMIN' ? 'Admin' : 'Citizen'} login.`);
-        localStorage.removeItem('grievance_user_auth_error_role');
       } else {
         setError(`Invalid credentials or access denied for ${roleMeta[role].label} portal.`);
       }
@@ -85,18 +99,6 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
       setError(res.error || 'Registration failed. Please try again.');
     }
 
-    setLoading(false);
-  };
-
-  const handleDemo = async () => {
-    setLoading(true);
-    setError('');
-    const ok = await demoLogin(role);
-    if (ok) {
-      router.push(redirectTo);
-    } else {
-      setError('Demo login failed. Seed data may be missing.');
-    }
     setLoading(false);
   };
 
@@ -299,21 +301,6 @@ export default function RoleLogin({ role, title, subtitle, redirectTo, allowDemo
             </button>
           </form>
 
-          {allowDemo && mode === 'login' && (
-            <div className="login-demo-section">
-              <div className="login-divider">
-                <span>Demo Access</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleDemo}
-                className="login-demo-btn"
-                disabled={loading}
-              >
-                Continue as Demo {roleMeta[role].label}
-              </button>
-            </div>
-          )}
 
           <motion.p
             initial={{ opacity: 0 }}

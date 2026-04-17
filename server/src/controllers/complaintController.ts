@@ -3,10 +3,13 @@ import Complaint from '../models/Complaint';
 import Officer from '../models/Officer';
 import Escalation from '../models/Escalation';
 import AuditLog from '../models/AuditLog';
+import Department from '../models/Department';
+import { emitToDepartment, emitToUser } from '../socket';
 import {
   detectCategory,
   detectPriority,
   getDepartment,
+  getDepartmentByCategory,
   calculateSLA,
   generateComplaintId,
 } from '../services/aiEngine';
@@ -53,13 +56,18 @@ export const createComplaint = async (req: Request, res: Response) => {
     const { description, location, userId, userName } = req.body;
     const { category, confidence: aiConfidence } = detectCategory(description);
     const priority = detectPriority(description);
-    const department = getDepartment(category);
+    
+    // Route complaint to the department that handles this category
+    const deptInfo = await getDepartmentByCategory(category);
+    const deptDoc = await Department.findOne({ name: deptInfo.name }).select('_id name');
+    const departmentId = deptDoc?._id || null;
+    
     const slaDeadline = calculateSLA(category, priority);
     const complaintId = generateComplaintId();
     const confidence = aiConfidence;
 
-    // Find officer in the right department
-    const officer = await Officer.findOne({ department, isActive: true })
+    // Find officer in the routed department
+    const officer = await Officer.findOne({ department: deptInfo.name, isActive: true })
       .sort({ pendingCount: 1 });
 
     const complaint = await Complaint.create({
@@ -68,7 +76,8 @@ export const createComplaint = async (req: Request, res: Response) => {
       category,
       priority,
       status: 'PENDING',
-      department,
+      department: deptInfo.name,
+      departmentId,
       location,
       assignedOfficer: officer?._id || null,
       assignedOfficerName: officer?.name || null,
@@ -89,7 +98,19 @@ export const createComplaint = async (req: Request, res: Response) => {
       role: 'PUBLIC',
       targetType: 'complaint',
       targetId: complaintId,
-      details: `New ${priority} complaint: ${category} at ${location?.area || 'Unknown'}`,
+      details: `New ${priority} complaint: ${category} (${deptInfo.source === 'database' ? 'routed' : 'unmapped'}) → ${deptInfo.name} at ${location?.area || 'Unknown'}`,
+    });
+
+    // Emit real-time notification to department admins
+    emitToDepartment(deptInfo.name, 'new_complaint', {
+      complaintId,
+      category,
+      priority,
+      userName,
+      department: deptInfo.name,
+      location: location?.area,
+      description: description.substring(0, 100),
+      timestamp: new Date(),
     });
 
     res.status(201).json({ success: true, data: complaint });
@@ -270,6 +291,93 @@ export const addNote = async (req: AuthRequest, res: Response) => {
       targetType: 'complaint',
       targetId: complaint.complaintId,
       details: `Note: ${text.substring(0, 80)}`,
+    });
+
+    res.json({ success: true, data: complaint });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// GET /api/officer/complaints
+export const getOfficerComplaints = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.userId) return res.status(401).json({ success: false, error: 'Not authenticated' });
+    const complaints = await Complaint.find({ assignedTo: req.user.userId }).sort({ createdAt: -1 });
+    res.json({ success: true, data: complaints });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// PATCH /api/officer/complaints/:id/status
+export const updateOfficerComplaintStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { status, remarks, proofFileName } = req.body;
+    if (!status) return res.status(400).json({ success: false, error: 'status is required' });
+    const complaint = await Complaint.findOne({ complaintId: req.params.id, assignedTo: req.user?.userId });
+    if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
+
+    complaint.status = status;
+    if (status === 'RESOLVED') {
+      complaint.resolvedAt = new Date();
+    }
+    if (typeof proofFileName === 'string' && proofFileName.trim()) {
+      complaint.proofFileName = proofFileName.trim();
+    }
+    if (remarks) {
+      if (!complaint.notes) complaint.notes = [];
+      complaint.notes.push({
+        text: remarks,
+        addedBy: req.user?.name || 'Officer',
+        addedAt: new Date(),
+        attachment: null,
+      });
+    }
+
+    await complaint.save();
+
+    await AuditLog.create({
+      action: 'OFFICER_UPDATE_STATUS',
+      performedBy: req.user?.userId || 'system',
+      performedByName: req.user?.name || 'Officer',
+      role: req.user?.role || 'OFFICER',
+      targetType: 'complaint',
+      targetId: complaint.complaintId,
+      details: `Status -> ${status}`,
+    });
+
+    res.json({ success: true, data: complaint });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// POST /api/officer/complaints/:id/remark
+export const addOfficerComplaintRemark = async (req: AuthRequest, res: Response) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ success: false, error: 'text is required' });
+    const complaint = await Complaint.findOne({ complaintId: req.params.id, assignedTo: req.user?.userId });
+    if (!complaint) return res.status(404).json({ success: false, error: 'Complaint not found' });
+
+    if (!complaint.notes) complaint.notes = [];
+    complaint.notes.push({
+      text,
+      addedBy: req.user?.name || 'Officer',
+      addedAt: new Date(),
+      attachment: null,
+    });
+    await complaint.save();
+
+    await AuditLog.create({
+      action: 'OFFICER_ADD_REMARK',
+      performedBy: req.user?.userId || 'system',
+      performedByName: req.user?.name || 'Officer',
+      role: req.user?.role || 'OFFICER',
+      targetType: 'complaint',
+      targetId: complaint.complaintId,
+      details: 'Added officer remark',
     });
 
     res.json({ success: true, data: complaint });
