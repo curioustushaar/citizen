@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,12 +26,13 @@ import {
   updateProfile,
 } from '@/lib/firebase';
 
-export default function CitizenLoginPage() {
+function CitizenLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ export default function CitizenLoginPage() {
   const [confirmation, setConfirmation] = useState(null);
   const recaptchaRef = useRef(null);
   const handledLoginRef = useRef(false);
+  const autoLoginRef = useRef(false);
 
   useEffect(() => {
     const modeParam = searchParams.get('mode');
@@ -51,16 +53,15 @@ export default function CitizenLoginPage() {
   useEffect(() => {
     let isMounted = true;
     const checkSession = async () => {
+      const allowAutoRedirect = localStorage.getItem('citizen_auth_initiated') === '1';
+      if (!allowAutoRedirect) return;
       try {
-        const citizenToken = localStorage.getItem('citizen_token');
-        if (!citizenToken) return;
         const res = await fetch('/api/citizen/auth/me', {
           credentials: 'include',
-          headers: { Authorization: `Bearer ${citizenToken}` },
         });
         const data = await res.json();
         if (isMounted && res.ok && data?.success) {
-          router.replace('/citizen/dashboard');
+          router.replace('/user/dashboard');
         }
       } catch {
         // Ignore session check errors on login page
@@ -107,7 +108,9 @@ export default function CitizenLoginPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user || handledLoginRef.current) return;
+      const allowAutoLogin =
+        autoLoginRef.current || localStorage.getItem('citizen_auth_initiated') === '1';
+      if (!allowAutoLogin || !user || handledLoginRef.current) return;
       setLoading(true);
       try {
         const idToken = await user.getIdToken();
@@ -131,23 +134,20 @@ export default function CitizenLoginPage() {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Login failed');
     handledLoginRef.current = true;
-    if (data.token) {
-      localStorage.setItem('citizen_token', data.token);
-    }
-    if (data.user) {
-      localStorage.setItem('citizen_user', JSON.stringify(data.user));
-    }
-    router.push('/citizen/dashboard');
+    localStorage.removeItem('citizen_auth_initiated');
+    localStorage.setItem('citizen_login_pending', Date.now().toString());
+    router.replace('/user/dashboard');
   };
 
   const handleGoogle = async () => {
     setLoading(true);
     setError('');
     try {
-      localStorage.removeItem('citizen_token');
-      localStorage.removeItem('citizen_user');
+      autoLoginRef.current = true;
+      localStorage.setItem('citizen_auth_initiated', '1');
       await signInWithRedirect(auth, googleProvider);
     } catch (err) {
+      localStorage.removeItem('citizen_auth_initiated');
       setError(err.message || 'Google login failed');
       setLoading(false);
     } finally {
@@ -160,21 +160,23 @@ export default function CitizenLoginPage() {
     setLoading(true);
     setError('');
     try {
-      localStorage.removeItem('citizen_token');
-      localStorage.removeItem('citizen_user');
+      autoLoginRef.current = true;
+      localStorage.setItem('citizen_auth_initiated', '1');
       let userCredential;
       if (mode === 'register') {
         userCredential = await createUserWithEmailAndPassword(auth, email, password);
       } else {
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       }
-      if (mode === 'register' && email) {
-        await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
+      if (mode === 'register') {
+        const displayName = fullName.trim() || email.split('@')[0];
+        await updateProfile(userCredential.user, { displayName });
       }
       const idToken = await userCredential.user.getIdToken();
       await handleBackendLogin(idToken);
     } catch (err) {
       handledLoginRef.current = false;
+      localStorage.removeItem('citizen_auth_initiated');
       setError(err.message || 'Email login failed');
     } finally {
       setLoading(false);
@@ -185,8 +187,8 @@ export default function CitizenLoginPage() {
     setLoading(true);
     setError('');
     try {
-      localStorage.removeItem('citizen_token');
-      localStorage.removeItem('citizen_user');
+      autoLoginRef.current = true;
+      localStorage.setItem('citizen_auth_initiated', '1');
       const normalizedPhone = phone.trim();
       if (!normalizedPhone) {
         throw new Error('Enter a phone number with country code, e.g. +91...');
@@ -199,6 +201,7 @@ export default function CitizenLoginPage() {
       setConfirmation(result);
     } catch (err) {
       handledLoginRef.current = false;
+      localStorage.removeItem('citizen_auth_initiated');
       setError(err.message || 'OTP send failed');
     } finally {
       setLoading(false);
@@ -209,11 +212,14 @@ export default function CitizenLoginPage() {
     setLoading(true);
     setError('');
     try {
+      autoLoginRef.current = true;
+      localStorage.setItem('citizen_auth_initiated', '1');
       const result = await confirmation.confirm(otp);
       const idToken = await result.user.getIdToken();
       await handleBackendLogin(idToken);
     } catch (err) {
       handledLoginRef.current = false;
+      localStorage.removeItem('citizen_auth_initiated');
       setError(err.message || 'OTP verification failed');
     } finally {
       setLoading(false);
@@ -262,10 +268,10 @@ export default function CitizenLoginPage() {
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex-1 px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                   mode === 'login'
-                    ? 'bg-primary-500/20 text-primary-300 border border-primary-500/30'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    ? 'bg-primary-500 text-white border-primary-500'
+                    : 'text-white/70 border-white/10 hover:text-white hover:border-white/30'
                 }`}
               >
                 Login
@@ -273,10 +279,10 @@ export default function CitizenLoginPage() {
               <button
                 type="button"
                 onClick={() => setMode('register')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex-1 px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                   mode === 'register'
-                    ? 'bg-primary-500/20 text-primary-300 border border-primary-500/30'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    ? 'bg-primary-500 text-white border-primary-500'
+                    : 'text-white/70 border-white/10 hover:text-white hover:border-white/30'
                 }`}
               >
                 Register
@@ -342,6 +348,21 @@ export default function CitizenLoginPage() {
           </div>
 
           <form onSubmit={handleEmail} className="login-form">
+            {mode === 'register' && (
+              <div className="login-field">
+                <div className="login-input-wrapper">
+                  <UserCircle2 className="login-input-icon" />
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="login-input"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+              </div>
+            )}
             <div className="login-field">
               <div className="login-input-wrapper">
                 <Mail className="login-input-icon" />
@@ -393,5 +414,13 @@ export default function CitizenLoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function CitizenLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <CitizenLoginContent />
+    </Suspense>
   );
 }

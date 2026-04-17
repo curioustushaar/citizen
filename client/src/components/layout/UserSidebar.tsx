@@ -12,7 +12,10 @@ import {
   Activity,
   Zap,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LayoutDashboard,
+  ShieldCheck,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 
@@ -27,79 +30,105 @@ export default function UserSidebar({ collapsed, onToggle }: SidebarProps) {
   const { user, logout, t } = useAuth();
 
   const navItems = [
-    { label: t('dashboard'), icon: Activity, href: '/user/dashboard' },
+    { label: t('dashboard'), icon: LayoutDashboard, href: '/user/dashboard' },
     { label: t('submitComplaint'), icon: PlusCircle, href: '/user/complaints/new' },
-    { label: t('myComplaints'), icon: FileText, href: '/user/complaints' },
-    { label: t('nearbyIssues'), icon: Navigation, href: '/user/nearby' },
+    { label: 'Intelligence Feed', icon: FileText, href: '/user/all-complaints' },
+  ];
+
+  const bottomItems = [
+    { label: 'Security Vault', icon: ShieldCheck, href: '/user/security' },
+    { label: 'Preferences', icon: Settings, href: '/user/settings' },
   ];
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: collapsed ? 72 : 260 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="fixed left-0 top-0 bottom-0 z-40 flex flex-col
-                 premium-sidebar border-r dark:border-white/[0.06] border-slate-200"
-    >
-      {/* Logo */}
-      <div className="h-16 flex items-center gap-3 px-4 border-b dark:border-white/5 border-slate-200/50">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600
-                        flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/20">
-          <Zap className="w-5 h-5 text-white" />
+    <div className="flex flex-col h-full bg-white dark:bg-[#020617] relative z-20">
+      
+      {/* Branding */}
+      <div className="h-20 flex items-center gap-4 px-6 mb-4">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-[0_8px_20px_rgba(59,130,246,0.3)]">
+          <Zap className="w-6 h-6 text-white" />
         </div>
         <AnimatePresence>
           {!collapsed && (
             <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
               className="overflow-hidden whitespace-nowrap"
             >
-              <p className="text-sm font-bold dark:text-white text-slate-900">Citizen Portal</p>
-              <p className="text-[9px] dark:text-white/30 text-slate-500 uppercase tracking-widest">Smart Governance</p>
+              <p className="text-base font-black dark:text-white text-slate-900 leading-tight">URBAN AI</p>
+              <p className="text-[9px] font-bold text-primary-500 uppercase tracking-[0.2em]">Municipal Core</p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* User Info removed per design */}
-
-      {/* Nav Items */}
-      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto custom-scrollbar">
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`nav-link ${isActive ? 'nav-link-active' : ''} ${collapsed ? 'justify-center px-0' : ''}`}
-            >
-              <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-primary-500' : 'text-slate-500 dark:text-white/40'}`} />
-              {!collapsed && <span className="text-sm font-medium ml-3">{item.label}</span>}
+            <Link key={item.href} href={item.href}>
+              <motion.div
+                whileHover={{ x: 4 }}
+                className={`relative flex items-center h-12 rounded-2xl transition-all duration-300 group cursor-pointer ${
+                  isActive 
+                  ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400' 
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/[0.03]'
+                } ${collapsed ? 'justify-center' : 'px-4'}`}
+              >
+                {isActive && (
+                  <motion.div 
+                    layoutId="active-pill"
+                    className="absolute left-0 w-1.5 h-6 bg-primary-500 rounded-r-full shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+                  />
+                )}
+                <Icon className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-primary-500' : ''}`} />
+                {!collapsed && (
+                  <span className={`ml-4 text-[13px] font-black tracking-tight ${isActive ? '' : 'group-hover:text-slate-900 dark:group-hover:text-white transition-colors'}`}>
+                    {item.label}
+                  </span>
+                )}
+              </motion.div>
             </Link>
           );
         })}
+
+        <div className="py-4">
+           <div className={`h-[1px] bg-slate-100 dark:bg-white/5 ${collapsed ? 'mx-2' : ''}`} />
+        </div>
+
+        {bottomItems.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <div className={`flex items-center h-12 rounded-2xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-all ${collapsed ? 'justify-center' : 'px-4'}`}>
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span className="ml-4 text-[12px] font-bold">{item.label}</span>}
+            </div>
+          </Link>
+        ))}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="px-2 py-3 border-t dark:border-white/[0.06] border-slate-200/50 space-y-1">
-        <button
-          onClick={() => { logout(); router.push('/'); }}
-          className={`nav-link w-full text-rose-500 dark:text-rose-400 group hover:bg-rose-500/10 ${collapsed ? 'justify-center px-0' : ''}`}
+      {/* Footer Actions */}
+      <div className="p-4 space-y-2">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={logout}
+          className={`flex items-center h-12 w-full rounded-2xl text-rose-500 hover:bg-rose-500/10 transition-all ${collapsed ? 'justify-center' : 'px-4'}`}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span className="text-sm font-medium ml-3">Exit Portal</span>}
-        </button>
+          {!collapsed && <span className="ml-4 text-[13px] font-black uppercase tracking-widest">Sign Out</span>}
+        </motion.button>
 
         <button
           onClick={onToggle}
-          className="nav-link w-full justify-center text-slate-400 hover:text-primary-500 transition-all"
+          className="flex items-center justify-center w-full h-10 text-slate-300 hover:text-primary-500 transition-all"
         >
           {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
         </button>
       </div>
-    </motion.aside>
+    </div>
   );
 }

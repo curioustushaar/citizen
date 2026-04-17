@@ -29,9 +29,16 @@ function isAdminPath(pathname: string) {
 function CitizenGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !user) {
+      const pending = localStorage.getItem('citizen_login_pending');
+      if (pending) {
+        const ageMs = Date.now() - Number(pending || 0);
+        if (ageMs < 8000) return;
+        localStorage.removeItem('citizen_login_pending');
+      }
       router.replace('/citizen/login');
     }
   }, [isLoading, user, router]);
@@ -42,6 +49,17 @@ function CitizenGuard({ children }: { children: React.ReactNode }) {
         <div className="w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
       </div>
     );
+  }
+
+  if (!user) {
+    const pending = localStorage.getItem('citizen_login_pending');
+    if (pending && Date.now() - Number(pending || 0) < 8000) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-transparent">
+          <div className="w-10 h-10 border-4 border-slate-200 border-t-primary-500 rounded-full animate-spin" />
+        </div>
+      );
+    }
   }
 
   if (!user) return null;

@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth';
 import OfficerList from '@/components/admin/OfficerList';
 import ComplaintTable from '@/components/admin/ComplaintTable';
 import { api } from '@/lib/api';
+import { getSocket } from '@/lib/socket';
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth();
@@ -55,9 +56,14 @@ export default function AdminPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      const complaintParams = new URLSearchParams({ limit: '100' });
+      if (user?.role === 'ADMIN' && user?.department) {
+        complaintParams.set('department', user.department);
+      }
+
       const [offRes, compRes, usrRes, dptRes] = await Promise.all([
         api.getOfficers(),
-        api.getComplaints('limit=100'),
+        api.getComplaints(complaintParams.toString()),
         api.getUsers(),
         api.getDepartments(),
       ]);
@@ -77,6 +83,49 @@ export default function AdminPage() {
       }
     };
     fetchData();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('grievance_token') : null;
+    const socket = getSocket(token);
+
+    const onCreated = (c: any) => {
+      if (user.role === 'ADMIN' && user.department && c?.department && c.department !== user.department) {
+        return;
+      }
+
+      setComplaints((prev) => {
+        const exists = prev.some(
+          (x: any) => x?._id === c?._id || (x?.complaintId && x.complaintId === c?.complaintId)
+        );
+        if (exists) return prev;
+        return [c, ...prev].slice(0, 100);
+      });
+    };
+
+    const onUpdated = (c: any) => {
+      if (user.role === 'ADMIN' && user.department && c?.department && c.department !== user.department) {
+        return;
+      }
+
+      setComplaints((prev) =>
+        prev.map((x: any) =>
+          x?._id === c?._id || (x?.complaintId && x.complaintId === c?.complaintId)
+            ? { ...x, ...c }
+            : x
+        )
+      );
+    };
+
+    socket.on('complaint_created', onCreated);
+    socket.on('complaint_updated', onUpdated);
+
+    return () => {
+      socket.off('complaint_created', onCreated);
+      socket.off('complaint_updated', onUpdated);
+    };
   }, [user]);
 
   const handleUpdateDept = async (e: React.FormEvent) => {
@@ -109,6 +158,16 @@ export default function AdminPage() {
     { key: 'settings' as const, label: 'Dept Structure', icon: Building2, count: 0 },
   ];
 
+  const complaintStats = complaints.reduce(
+    (acc: any, c: any) => {
+      const s = (c?.status || 'PENDING').toString().toUpperCase();
+      acc.total += 1;
+      acc[s] = (acc[s] || 0) + 1;
+      return acc;
+    },
+    { total: 0, PENDING: 0, IN_PROGRESS: 0, RESOLVED: 0, ESCALATED: 0 }
+  );
+
   if (isLoading || !user || user.role === 'PUBLIC') return null;
 
   return (
@@ -123,6 +182,31 @@ export default function AdminPage() {
             {user?.department || 'Department'} Management Panel
           </p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[{
+          label: 'Pending',
+          value: complaintStats.PENDING,
+          cls: 'border-warning-500/30 bg-warning-500/5 text-warning-400',
+        }, {
+          label: 'In Progress',
+          value: complaintStats.IN_PROGRESS,
+          cls: 'border-primary-500/30 bg-primary-500/5 text-primary-400',
+        }, {
+          label: 'Resolved',
+          value: complaintStats.RESOLVED,
+          cls: 'border-success-500/30 bg-success-500/5 text-success-400',
+        }, {
+          label: 'Escalated',
+          value: complaintStats.ESCALATED,
+          cls: 'border-danger-500/30 bg-danger-500/5 text-danger-400',
+        }].map((s) => (
+          <div key={s.label} className={`glass-card p-3 border ${s.cls}`}>
+            <p className="text-[10px] uppercase tracking-widest font-bold opacity-80">{s.label}</p>
+            <p className="text-2xl font-black mt-1">{s.value}</p>
+          </div>
+        ))}
       </div>
 
       <div className="flex gap-2 flex-wrap border-b border-white/5 pb-2">
@@ -265,7 +349,7 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-white/40 uppercase mb-1">Clearance Level (1-8)</label>
-                  <input type="number" value={newMember.level || 1} onChange={(e) => setNewMember({ ...newMember, level: parseInt(e.target.value) })} className="input-field text-sm" min="1" max="8" />
+                  <input type="number" value={newMember.level || 1} onChange={(e) => setNewMember({ ...newMember, level: parseInt(e.target.value) })} className="input-field text-sm" min="1" max="8" aria-label="Clearance Level" />
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-white/5">

@@ -87,22 +87,18 @@ export default function NewComplaintPage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [location, setLocation] = useState('');
+  const [city, setCity] = useState('');
+  const [area, setArea] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [fullAddress, setFullAddress] = useState('');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isCapturingLoc, setIsCapturingLoc] = useState(false);
-
-  // Auto-capture location
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      setIsCapturingLoc(true);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setIsCapturingLoc(false);
-        },
-        () => setIsCapturingLoc(false)
-      );
-    }
-  }, []);
+  const [locationStatus, setLocationStatus] = useState('');
+  const [locationStatusType, setLocationStatusType] = useState<'idle' | 'loading' | 'success' | 'error' | 'denied'>(
+    'idle'
+  );
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [detectedLocationLabel, setDetectedLocationLabel] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
@@ -230,6 +226,10 @@ export default function NewComplaintPage() {
       const formData = new FormData();
       formData.append('description', description);
       formData.append('location', location);
+      if (city) formData.append('city', city);
+      if (area) formData.append('area', area);
+      if (pincode) formData.append('pincode', pincode);
+      if (fullAddress) formData.append('fullAddress', fullAddress);
       formData.append('category', category || aiCategory || 'General');
       if (coords) {
         formData.append('lat', coords.lat.toString());
@@ -257,6 +257,69 @@ export default function NewComplaintPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleUseLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setLocationStatusType('error');
+      setLocationStatus('Geolocation is not supported in this browser.');
+      return;
+    }
+
+    setIsCapturingLoc(true);
+    setLocationStatusType('loading');
+    setLocationStatus('Detecting location...');
+    setLocationAccuracy(null);
+    setDetectedLocationLabel('');
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setCoords({ lat, lng });
+        setLocationAccuracy(Number.isFinite(pos.coords.accuracy) ? Math.round(pos.coords.accuracy) : null);
+
+        try {
+          const res = await fetch(`/api/location/reverse?lat=${lat}&lng=${lng}`);
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data?.error || 'Could not detect location');
+          }
+
+          const nextCity = data.city || city;
+          const nextArea = data.area || area;
+          const nextPincode = data.pincode || pincode;
+          const nextFullAddress = data.fullAddress || fullAddress;
+
+          setCity(nextCity);
+          setArea(nextArea);
+          setPincode(nextPincode);
+          setFullAddress(nextFullAddress);
+
+          const label = [nextArea, nextCity].filter(Boolean).join(', ') || nextFullAddress || 'Location detected';
+          setDetectedLocationLabel(label);
+          if (!location) setLocation(nextFullAddress || label);
+          setLocationStatusType('success');
+          setLocationStatus('Location detected successfully');
+        } catch {
+          setLocationStatusType('error');
+          setLocationStatus('Could not detect location');
+        } finally {
+          setIsCapturingLoc(false);
+        }
+      },
+      (err) => {
+        setIsCapturingLoc(false);
+        if (err?.code === err.PERMISSION_DENIED) {
+          setLocationStatusType('denied');
+          setLocationStatus('Location permission denied. Please enter manually.');
+        } else {
+          setLocationStatusType('error');
+          setLocationStatus('Could not detect location');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
   };
 
   const priorityInfo = PRIORITY_CONFIG[aiPriority] || PRIORITY_CONFIG.LOW;
@@ -309,7 +372,7 @@ export default function NewComplaintPage() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <button
-              onClick={() => router.push('/user/complaints')}
+              onClick={() => router.push(`/user/complaints/${submittedData._id}`)}
               className="flex-1 py-4 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary-500/20 active:scale-95"
             >
               Track Status <ArrowRight className="w-5 h-5" />
@@ -480,6 +543,50 @@ export default function NewComplaintPage() {
                 <MapPin className="w-4 h-4 text-rose-500 font-bold" />
                 {t('exactLocation')} *
               </label>
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={handleUseLocation}
+                  disabled={locationStatusType === 'loading'}
+                  className="px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
+                >
+                  {locationStatusType === 'loading' ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Detecting location...
+                    </span>
+                  ) : (
+                    '📍 Use my current location'
+                  )}
+                </button>
+                {(locationStatusType === 'success' || locationStatusType === 'error' || locationStatusType === 'denied') && (
+                  <button
+                    type="button"
+                    onClick={handleUseLocation}
+                    className="text-[10px] font-black uppercase tracking-widest text-primary-500 hover:text-primary-600"
+                  >
+                    Change location
+                  </button>
+                )}
+              </div>
+              {locationStatus && (
+                <div className="flex flex-wrap items-center gap-2 text-[11px] mb-4">
+                  {locationStatusType === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                  {locationStatusType === 'loading' && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+                  {(locationStatusType === 'error' || locationStatusType === 'denied') && (
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  )}
+                  <span className="text-slate-500 dark:text-slate-300">{locationStatus}</span>
+                  {locationStatusType === 'success' && locationAccuracy !== null && (
+                    <span className="text-slate-400">Accuracy ~{locationAccuracy}m</span>
+                  )}
+                </div>
+              )}
+              {detectedLocationLabel && locationStatusType === 'success' && (
+                <div className="text-[11px] text-emerald-500 font-semibold mb-4">
+                  {detectedLocationLabel}
+                </div>
+              )}
               <input
                 type="text"
                 value={location}
@@ -488,6 +595,36 @@ export default function NewComplaintPage() {
                 required
                 className="w-full bg-transparent dark:text-white text-slate-900 font-bold placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-rose-500/50"
               />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="City"
+                  className="w-full bg-transparent dark:text-white text-slate-900 font-semibold placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-rose-500/50"
+                />
+                <input
+                  type="text"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  placeholder="Area / Locality"
+                  className="w-full bg-transparent dark:text-white text-slate-900 font-semibold placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-rose-500/50"
+                />
+                <input
+                  type="text"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                  placeholder="Pincode"
+                  className="w-full bg-transparent dark:text-white text-slate-900 font-semibold placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-rose-500/50"
+                />
+                <input
+                  type="text"
+                  value={fullAddress}
+                  onChange={(e) => setFullAddress(e.target.value)}
+                  placeholder="Full address (optional)"
+                  className="w-full bg-transparent dark:text-white text-slate-900 font-semibold placeholder-slate-300 dark:placeholder-slate-700 focus:outline-none py-2 border-b-2 border-slate-100 dark:border-white/5 transition-colors focus:border-rose-500/50"
+                />
+              </div>
             </div>
           </div>
 
@@ -506,8 +643,8 @@ export default function NewComplaintPage() {
             {imagePreviews.length > 0 && (
               <div className="flex flex-wrap gap-4 mb-6">
                 {imagePreviews.map((src, i) => (
-                  <motion.div 
-                    key={i} 
+                  <motion.div
+                    key={i}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="relative group w-24 h-24"

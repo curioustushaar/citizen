@@ -83,21 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!restoredUser) {
         try {
-          const citizenToken = localStorage.getItem('citizen_token');
-          if (!citizenToken) {
-            if (isMounted) setIsLoading(false);
-            return;
-          }
           const res = await fetch('/api/citizen/auth/me', {
             credentials: 'include',
-            headers: citizenToken ? { Authorization: `Bearer ${citizenToken}` } : undefined,
           });
           const data = await res.json();
           if (res.ok && data?.success && data?.user && isMounted) {
             setUser(normalizeUser(data.user));
+            localStorage.removeItem('citizen_login_pending');
+          } else {
+            localStorage.removeItem('citizen_login_pending');
           }
         } catch {
           // Ignore cookie-based auth failures
+          localStorage.removeItem('citizen_login_pending');
         }
       }
 
@@ -139,11 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.success) {
         const userRole = data.data.user.role as UserData['role'];
         if (requiredRole && userRole !== requiredRole) {
-          const superAdminAccessingAdmin = requiredRole === 'ADMIN' && userRole === 'SUPER_ADMIN';
-          if (!superAdminAccessingAdmin) {
-            localStorage.setItem('grievance_user_auth_error_role', userRole);
-            return false;
-          }
+          localStorage.setItem('grievance_user_auth_error_role', userRole);
+          return false;
         }
         saveSession(data.data.token, data.data.user);
         return true;
@@ -212,6 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem('grievance_token');
     localStorage.removeItem('grievance_user');
+    localStorage.removeItem('citizen_token');
+    localStorage.removeItem('citizen_login_pending');
   };
 
   return (
