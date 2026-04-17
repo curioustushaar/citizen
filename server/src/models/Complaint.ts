@@ -15,6 +15,9 @@ export interface IComplaint extends Document {
   departmentId: mongoose.Types.ObjectId | null;
   slaDeadline: Date;
   resolvedAt: Date | null;
+  rejectedAt: Date | null;
+  rejectionReason: string;
+  rejectedBy: string;
   notes: {
     text: string;
     addedBy: string;
@@ -56,6 +59,9 @@ const ComplaintSchema = new Schema<IComplaint>(
     departmentId: { type: Schema.Types.ObjectId, ref: 'Department', default: null },
     slaDeadline: { type: Date },
     resolvedAt:  { type: Date, default: null },
+    rejectedAt:  { type: Date, default: null },
+    rejectionReason: { type: String, default: '' },
+    rejectedBy: { type: String, default: '' },
     notes: [
       {
         text: { type: String, required: true },

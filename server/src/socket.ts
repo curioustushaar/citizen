@@ -15,13 +15,23 @@ type SocketUser = {
 let io: Server;
 
 export const initSocket = (server: HttpServer) => {
+  const allowedOrigins = [
+    CLIENT_URL,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'http://10.79.145.124:3000',
+    'http://10.79.145.124:3001',
+  ];
+
   io = new Server(server, {
     cors: {
-      origin: [CLIENT_URL, 'http://localhost:3000', 'http://localhost:3001', 'http://10.79.145.124:3000'],
+      origin: allowedOrigins,
       methods: ['GET', 'POST', 'PATCH'],
       credentials: true,
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
 
   io.use((socket, next) => {

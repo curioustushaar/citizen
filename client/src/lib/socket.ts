@@ -8,11 +8,15 @@ let socket: Socket | undefined;
 export const getSocket = (token?: string | null) => {
   if (!socket) {
     socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      // Start with polling to avoid noisy websocket handshake failures on strict networks.
+      transports: ['polling', 'websocket'],
+      upgrade: true,
+      withCredentials: true,
+      timeout: 10000,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10,
       auth: token ? { token } : {},
     });
 
@@ -26,11 +30,11 @@ export const getSocket = (token?: string | null) => {
     });
 
     socket.on('connect_error', (error) => {
-      console.error('⚠️ Socket.io connection error:', error);
+      console.warn('⚠️ Socket.io connection warning:', error?.message || error);
     });
   }
 
-  if (token && socket.auth !== { token }) {
+  if (token && (socket.auth as any)?.token !== token) {
     socket.auth = { token };
   }
 

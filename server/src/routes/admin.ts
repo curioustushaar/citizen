@@ -10,6 +10,7 @@ import {
   createOfficer,
   getAdminComplaints,
   acceptComplaint,
+  rejectComplaint,
   assignComplaint,
   updateComplaintStatus,
   addComplaintRemark,
@@ -44,6 +45,7 @@ router.post('/officers', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), create
 
 router.get('/complaints', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), getAdminComplaints);
 router.patch('/complaints/:id/accept', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), acceptComplaint);
+router.patch('/complaints/:id/reject', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), rejectComplaint);
 router.patch('/complaints/:id/assign', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), assignComplaint);
 router.patch('/complaints/:id/status', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), updateComplaintStatus);
 router.post('/complaints/:id/remark', verifyAuth, requireRole('ADMIN', 'SUPER_ADMIN'), addComplaintRemark);
