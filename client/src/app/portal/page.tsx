@@ -22,9 +22,9 @@ const portals = [
     glow: 'shadow-cyan-500/20',
   },
   {
-    title: 'Superadmin Command',
-    subtitle: 'Citywide insights, SLA control, and governance settings',
-    href: '/superadmin/login',
+    title: 'Sub-Department Login',
+    subtitle: 'Head-assigned queues, resolution tracking, and department actions',
+    href: '/sub-department/login',
     icon: ShieldCheck,
     accent: 'from-amber-400 to-orange-500',
     glow: 'shadow-amber-500/20',
