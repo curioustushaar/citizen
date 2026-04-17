@@ -104,7 +104,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* ── Header ────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row items-center gap-8 bg-surface-900/40 border border-white/5 p-8 rounded-[40px] backdrop-blur-xl relative overflow-hidden">
+      <div className="flex flex-col md:flex-row items-center gap-8 bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 rounded-[40px] backdrop-blur-xl relative overflow-hidden">
         <div className="absolute -right-24 -top-24 w-64 h-64 bg-primary-500/10 rounded-full blur-[80px]" />
         
         <div className="relative group">
@@ -133,22 +133,22 @@ export default function ProfilePage() {
 
         <div className="text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
-            <h1 className="text-3xl font-black text-white">{formData.name}</h1>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white">{formData.name}</h1>
             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white bg-gradient-to-r ${roleColors[user?.role || 'PUBLIC']}`}>
               {user?.role}
             </span>
           </div>
-          <p className="text-white/40 text-sm flex items-center justify-center md:justify-start gap-2 italic">
+           <p className="text-slate-500 dark:text-white/40 text-sm flex items-center justify-center md:justify-start gap-2 italic">
             <Mail className="w-3 h-3" /> {formData.email}
           </p>
           <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-4">
-             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+             <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/80 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
                 <Shield className="w-3 h-3 text-emerald-400" />
-                <p className="text-[10px] font-bold text-white/60">Verified Identity</p>
+               <p className="text-[10px] font-bold text-slate-600 dark:text-white/60">Verified Identity</p>
              </div>
-             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+             <div className="flex items-center gap-2 px-4 py-2 bg-slate-100/80 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
                 <Activity className="w-3 h-3 text-blue-400" />
-                <p className="text-[10px] font-bold text-white/60">Active Contributor</p>
+               <p className="text-[10px] font-bold text-slate-600 dark:text-white/60">Active Contributor</p>
              </div>
           </div>
         </div>
@@ -157,60 +157,60 @@ export default function ProfilePage() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* ── Left Column: Personal Info ─────────────────────────── */}
         <div className="lg:col-span-2 space-y-8">
-          <section className="bg-surface-900/40 border border-white/5 p-8 rounded-[40px] backdrop-blur-xl">
-            <h3 className="text-sm font-black text-white/30 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+          <section className="bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 rounded-[40px] backdrop-blur-xl">
+            <h3 className="text-sm font-black text-slate-500 dark:text-white/30 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
               <UserCircle className="w-4 h-4 text-primary-500" />
               Identity Details
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Full Name</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/20" />
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all placeholder:text-white/10"
+                    className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all placeholder:text-slate-300 dark:placeholder:text-white/10"
                     placeholder="Enter full name"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Phone Number</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Phone Number</label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/20" />
                   <input
                     type="text"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all placeholder:text-white/10"
+                    className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all placeholder:text-slate-300 dark:placeholder:text-white/10"
                     placeholder="+91 XXXXX XXXXX"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Date of Birth</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Date of Birth</label>
                 <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/20" />
                   <input
                     type="date"
                     value={formData.dob}
                     onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                    className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
+                    className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Gender</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Gender</label>
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                  className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all appearance-none"
+                  className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all appearance-none"
                 >
                   <option value="">Select Gender</option>
                   <option value="Male">Male</option>
@@ -220,73 +220,73 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Brief Bio</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Brief Bio</label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   rows={3}
-                  className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all placeholder:text-white/10 resize-none"
+                  className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all placeholder:text-slate-300 dark:placeholder:text-white/10 resize-none"
                   placeholder="Tell us a bit about yourself..."
                 />
               </div>
             </div>
           </section>
 
-          <section className="bg-surface-900/40 border border-white/5 p-8 rounded-[40px] backdrop-blur-xl">
-            <h3 className="text-sm font-black text-white/30 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+          <section className="bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 rounded-[40px] backdrop-blur-xl">
+            <h3 className="text-sm font-black text-slate-500 dark:text-white/30 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-emerald-500" />
               Residential Details
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Address</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Address</label>
                 <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/20" />
                   <input
                     type="text"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
+                    className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
                     placeholder="House No, Street, Locality"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">City</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">City</label>
                 <div className="relative">
-                  <Map className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <Map className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/20" />
                   <input
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
+                    className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
                     placeholder="E.g. Delhi"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">State</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">State</label>
                 <input
                   type="text"
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
+                  className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 px-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
                   placeholder="E.g. Delhi"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/40 ml-1">Zip Code</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-white/40 ml-1">Zip Code</label>
                 <div className="relative">
-                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-white/20" />
                   <input
                     type="text"
                     value={formData.zipCode}
                     onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                    className="w-full bg-surface-800/40 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
+                    className="w-full bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl py-3 pl-12 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500/50 transition-all"
                     placeholder="110001"
                   />
                 </div>
@@ -297,9 +297,9 @@ export default function ProfilePage() {
 
         {/* ── Right Column: Sidebar Stats/Settings ───────────────── */}
         <div className="space-y-8">
-          <section className="bg-surface-900/40 border border-white/5 p-8 rounded-[40px] backdrop-blur-xl relative overflow-hidden">
+          <section className="bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 rounded-[40px] backdrop-blur-xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-1.5 h-full bg-primary-600" />
-            <h3 className="text-sm font-black text-white/30 uppercase tracking-[0.2em] mb-8">Quick Actions</h3>
+            <h3 className="text-sm font-black text-slate-500 dark:text-white/30 uppercase tracking-[0.2em] mb-8">Quick Actions</h3>
             
             <button
               type="submit"
@@ -317,48 +317,48 @@ export default function ProfilePage() {
             </button>
 
             <div className="mt-8 space-y-3">
-               <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Account Security</p>
-                    <p className="text-sm font-bold text-white">2FA Enabled</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 mb-1">Account Security</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">2FA Enabled</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/20" />
+                <ChevronRight className="w-4 h-4 text-slate-400 dark:text-white/20" />
                </div>
-               <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-100/70 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Privacy Level</p>
-                    <p className="text-sm font-bold text-white">Standard</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 mb-1">Privacy Level</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">Standard</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-white/20" />
+                <ChevronRight className="w-4 h-4 text-slate-400 dark:text-white/20" />
                </div>
             </div>
           </section>
 
-          <section className="bg-surface-900/40 border border-white/5 p-8 rounded-[40px] backdrop-blur-xl">
+           <section className="bg-white/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-8 rounded-[40px] backdrop-blur-xl">
              <div className="flex items-center gap-2 mb-8">
                <div className="w-2 h-2 rounded-full bg-primary-500 animate-ping" />
-               <h3 className="text-sm font-black text-white/30 uppercase tracking-[0.2em]">Platform Stats</h3>
+              <h3 className="text-sm font-black text-slate-500 dark:text-white/30 uppercase tracking-[0.2em]">Platform Stats</h3>
              </div>
 
              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                   <p className="text-sm font-bold text-white/60">Success Rate</p>
+                 <p className="text-sm font-bold text-slate-600 dark:text-white/60">Success Rate</p>
                    <p className="text-xl font-black text-emerald-400">98%</p>
                 </div>
-                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+               <div className="w-full bg-slate-200/80 dark:bg-white/5 h-1.5 rounded-full overflow-hidden">
                    <div className="h-full bg-emerald-500 w-[98%]" />
                 </div>
 
                 <div className="flex items-center justify-between">
-                   <p className="text-sm font-bold text-white/60">Grievances Filed</p>
+                 <p className="text-sm font-bold text-slate-600 dark:text-white/60">Grievances Filed</p>
                    <p className="text-xl font-black text-blue-400">12</p>
                 </div>
              </div>
           </section>
 
-          <div className="bg-gradient-to-br from-indigo-600/20 to-primary-600/20 border border-primary-500/20 p-6 rounded-[32px] relative overflow-hidden group">
+           <div className="bg-gradient-to-br from-indigo-600/10 to-primary-600/10 border border-primary-500/20 p-6 rounded-[32px] relative overflow-hidden group">
              <Info className="w-12 h-12 text-primary-500/20 absolute -right-2 -bottom-2 group-hover:scale-110 transition-transform" />
-             <p className="text-xs font-bold text-white relative z-10 leading-relaxed">
+             <p className="text-xs font-bold text-slate-700 dark:text-white relative z-10 leading-relaxed">
                Maintaining an updated profile helps us route your grievances to the correct zonal officers faster.
              </p>
           </div>
